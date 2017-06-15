@@ -12,7 +12,7 @@ class MyAdminForm(forms.ModelForm):
         model = Specimen
         fields = "__all__"
         widgets = {
-            'location': LatLongWidget
+            'coords': LatLongWidget
         }
 
 
