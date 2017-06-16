@@ -29,7 +29,7 @@ class Specimen(models.Model):
     scientific_name = models.CharField(max_length=100)
     coords = models.PointField("Coordinates", blank=True, null=True)
     depth = FloatRangeField(blank=True, null=True, help_text="Unit: meters.")
-    identified_by = models.ForeignKey(Person, blank=True, null=True)
+    identified_by = models.ForeignKey(Person)
     specimen_location = models.ForeignKey(SpecimenLocation)
     fixation = models.ForeignKey(Fixation, blank=True, null=True)
     comment = models.TextField(blank=True, null=True)

@@ -44,10 +44,9 @@ class Command(BaseCommand):
 
                 # Identificators
                 identified_by = row['Identified_by'].strip()
-                if identified_by:
-                    id_first_name, id_last_name = identified_by.split()
-                    identificator, _ = Person.objects.get_or_create(first_name=id_first_name, last_name=id_last_name)
-                    specimen.identified_by = identificator
+                id_first_name, id_last_name = identified_by.split()
+                identificator, _ = Person.objects.get_or_create(first_name=id_first_name, last_name=id_last_name)
+                specimen.identified_by = identificator
 
                 # Specimen locations
                 specimen_location, _ = SpecimenLocation.objects.get_or_create(name=row['Specimen_location'])
