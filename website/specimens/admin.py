@@ -37,3 +37,5 @@ admin.site.register(Specimen, SpecimenAdmin)
 admin.site.register(SpecimenLocation, SpecimenLocationAdmin)
 admin.site.register(Person, PersonAdmin)
 admin.site.register(Fixation, FixationAdmin)
+
+admin.site.site_header = 'Astapor administration'
