@@ -21,7 +21,8 @@ class SpecimenAdmin(admin.ModelAdmin):
 
     list_display = ('specimen_id', 'scientific_name', 'identified_by', 'specimen_location', 'depth_str', 'fixation')
     list_filter = ('identified_by', 'specimen_location', 'fixation')
-    search_fields = ['scientific_name']
+    search_fields = ['scientific_name', 'specimen_id']
+    # TODO: document searchable fields in template? (https://stackoverflow.com/questions/11411622/add-help-text-for-search-field-in-admin-py)
 
 class SpecimenLocationAdmin(admin.ModelAdmin):
     pass
