@@ -14,6 +14,7 @@ MODELS_TO_TRUNCATE = [Fixation, Person, SpecimenLocation, Specimen]
 # - Column name is important, not column order
 # - Lat/lon use comma as a separator
 
+
 class Command(BaseCommand):
     help = 'Initial data import to populate the tables'
 

@@ -34,4 +34,16 @@ class Specimen(models.Model):
     fixation = models.ForeignKey(Fixation, blank=True, null=True)
     comment = models.TextField(blank=True, null=True)
 
+    def depth_str(self):
+        if self.depth:
+            if self.depth.lower == self.depth.upper: # Single value
+                str = "{depth}m.".format(depth=self.depth.lower)
+            else:  # Real range
+                str = '{min_depth}-{max_depth}m.'.format(min_depth=self.depth.lower, max_depth=self.depth.upper)
+        else:  # No data
+            str = '-'
+
+        return str
+    depth_str.short_description = 'Depth'
+
 

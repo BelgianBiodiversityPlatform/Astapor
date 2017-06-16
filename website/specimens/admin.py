@@ -19,7 +19,7 @@ class MyAdminForm(forms.ModelForm):
 class SpecimenAdmin(admin.ModelAdmin):
     form = MyAdminForm
 
-    list_display = ('specimen_id', 'scientific_name', 'identified_by', 'specimen_location', 'depth', 'fixation')
+    list_display = ('specimen_id', 'scientific_name', 'identified_by', 'specimen_location', 'depth_str', 'fixation')
     list_filter = ('identified_by', 'specimen_location', 'fixation')
     search_fields = ['scientific_name']
 
