@@ -1,0 +1,86 @@
+{% extends "admin/change_form.html" %}
+
+{% load static %}
+
+{% block admin_change_form_document_ready %}
+    {{ block.super }}
+
+    <script type="text/javascript">
+        var $ = django.jQuery;
+
+        $(function() {
+            var conf = {
+                'container_selector': $('.field-scientific_name div:first-child'),
+                'sn_value_selector': $("#id_scientific_name"),
+
+                'icon_success': '{% static "admin/img/icon-yes.svg" %}',
+                'icon_warning': '{% static "admin/img/icon-alert.svg" %}',
+                'icon_error': '{% static "admin/img/icon-no.svg" %}'
+            };
+
+            var exactMatchAction = function(r){
+                var res='<img src="' + conf.icon_success + ' " /> ';
+                res += 'Ok, exact species name found at GBIF ';
+                res += 'with a confidence score of <strong>' + r.confidence + '</strong>';
+
+                return res;
+            };
+
+            var fuzzyMatchAction = function(r){
+                var res='<img src="' + conf.icon_warning + ' " /> ';
+                res += 'Fuzzy match at GBIF ';
+
+                res += '(' + '<strong><i>' + r.canonicalName + '</i></strong>' +' confidence: ' + r.confidence + ')';
+
+                console.log(r)
+
+                return res;
+            };
+
+            var higherrankAction = function(r){
+                var res='<img src="' + conf.icon_warning + ' " /> ';
+                res += 'Higher taxon found at GBIF ';
+                res += '(' + r.rank + ': ' + r.canonicalName + ')';
+
+                return res;
+            };
+
+            var noneAction = function(r){
+                var res='<img src="' + conf.icon_error + ' " /> ';
+                res += ':( Species unknown at GBIF ';
+
+                return res;
+            };
+
+            var GBIFSpeciesMatch = function (){
+                $('#results').empty();
+
+                var params = {
+                    rank: 'species',
+                    name: conf.sn_value_selector.val()
+                };
+
+                $.getJSON('http://api.gbif.org/v1/species/match', params, function(r) {
+                    var res;
+
+                    switch (r.matchType) {
+                        case "EXACT": res = exactMatchAction(r); break;
+                        case "FUZZY": res = fuzzyMatchAction(r); break;
+                        case "HIGHERRANK": res = higherrankAction(r); break;
+                        case "NONE": res = noneAction(r); break;
+                    }
+
+                    $('#results').html(res);
+                })
+            };
+
+            conf.container_selector.append('<div id="results"></div>');
+
+            // Call on page load...
+            GBIFSpeciesMatch();
+            // ... And when value change
+            conf.sn_value_selector.on('input', GBIFSpeciesMatch);
+        });
+    </script>
+
+{% endblock %}
