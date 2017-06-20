@@ -6,7 +6,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.management.base import BaseCommand, CommandError
 from django.contrib.gis.geos import Point
 
-from specimens.models import Person, SpecimenLocation, Specimen, Fixation, Expedition, Station
+from specimens.models import Person, SpecimenLocation, Specimen, Fixation, Expedition, Station, UNKNOWN_STATION_NAME
 
 MODELS_TO_TRUNCATE = [Station, Expedition, Fixation, Person, SpecimenLocation, Specimen]
 
@@ -22,6 +22,9 @@ def get_or_create_station_and_expedition(station_name, expedition_name):
 
     :rtype: Station
     """
+    if station_name == '':
+        station_name = UNKNOWN_STATION_NAME
+        
     try: # A station already exists for the correct expedition?
         return Station.objects.get(name=station_name, expedition__name=expedition_name)
 

@@ -41,7 +41,8 @@ class FixationAdmin(admin.ModelAdmin):
 
 @admin.register(Station)
 class StationAdmin(admin.ModelAdmin):
-    pass
+    list_display = ('name', 'expedition')
+    list_filter = ('expedition', )
 
 @admin.register(Expedition)
 class ExpeditionAdmin(admin.ModelAdmin):
