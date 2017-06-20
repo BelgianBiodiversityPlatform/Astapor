@@ -2,17 +2,33 @@ import csv
 
 from psycopg2.extras import NumericRange
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.management.base import BaseCommand, CommandError
 from django.contrib.gis.geos import Point
 
-from specimens.models import Person, SpecimenLocation, Specimen, Fixation
+from specimens.models import Person, SpecimenLocation, Specimen, Fixation, Expedition, Station
 
-MODELS_TO_TRUNCATE = [Fixation, Person, SpecimenLocation, Specimen]
+MODELS_TO_TRUNCATE = [Station, Expedition, Fixation, Person, SpecimenLocation, Specimen]
 
 # TODO: document use of this script:
 # - export Google Sheet (specimens) as CSV (separator: comma)
 # - Column name is important, not column order
 # - Lat/lon use comma as a separator
+
+
+def get_or_create_station_and_expedition(station_name, expedition_name):
+    # Returns a Station object, ready to assign to Specimen.station
+    """
+
+    :rtype: Station
+    """
+    try: # A station already exists for the correct expedition?
+        return Station.objects.get(name=station_name, expedition__name=expedition_name)
+
+    except ObjectDoesNotExist:  # New station, let's create it (with expedition if needed):
+        expedition, _ = Expedition.objects.get_or_create(name=expedition_name)
+        station = Station.objects.create(name=station_name, expedition=expedition)
+        return station
 
 
 class Command(BaseCommand):
@@ -41,6 +57,8 @@ class Command(BaseCommand):
             for i, row in enumerate(csv.DictReader(csv_file, delimiter=',')):
                 self.stdout.write('Processing row #{i}...'.format(i=i), ending='')
                 specimen = Specimen()
+
+                specimen.station = get_or_create_station_and_expedition(row['Station'].strip(), row['Expedition'].strip())
 
                 # Identificators
                 identified_by = row['Identified_by'].strip()

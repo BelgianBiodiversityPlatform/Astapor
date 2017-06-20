@@ -24,6 +24,21 @@ class Fixation(models.Model):
     def __str__(self):
         return self.name
 
+class Expedition(models.Model):
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
+
+class Station(models.Model):
+    name = models.CharField(max_length=100)
+    expedition = models.ForeignKey(Expedition)
+    # It may be interesting to add a location (point, polygon or line) for the station itself, but for now we keep the
+    # coordinates as a specimen attribute (when sampling we generally try to set the lat/lon for the specimen as precisely
+    # as possible, sometimes more than the station)
+    def __str__(self):
+        return "{name} (from exp. {exp_name})".format(name=self.name, exp_name=self.expedition)
+
 class Specimen(models.Model):
     specimen_id = models.IntegerField(unique=True)  # ID from the lab, not Django's PK
     scientific_name = models.CharField(max_length=100)
@@ -33,6 +48,7 @@ class Specimen(models.Model):
     specimen_location = models.ForeignKey(SpecimenLocation)
     fixation = models.ForeignKey(Fixation, blank=True, null=True)
     comment = models.TextField(blank=True, null=True)
+    station = models.ForeignKey(Station)
 
     def depth_str(self):
         if self.depth:
