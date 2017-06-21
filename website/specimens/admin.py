@@ -32,6 +32,14 @@ class SpecimenAdmin(admin.ModelAdmin):
         SpecimenPictureInline,
     ]
 
+    class Media:
+        css = {
+             "all": ("https://cdnjs.cloudflare.com/ajax/libs/ol3/3.15.1/ol.css",)
+        }
+
+        js = ("https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.3.3/proj4.js",
+              "https://cdnjs.cloudflare.com/ajax/libs/ol3/3.15.1/ol.js")
+
 @admin.register(SpecimenLocation)
 class SpecimenLocationAdmin(admin.ModelAdmin):
     pass
