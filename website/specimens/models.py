@@ -69,4 +69,14 @@ class Specimen(models.Model):
         return str
     depth_str.short_description = 'Depth'
 
+    def __str__(self):
+        return "Specimen #{specimen_id} ({scientific_name})".format(specimen_id=self.specimen_id,
+                                                                    scientific_name=self.scientific_name)
+
+
+class SpecimenPicture(models.Model):
+    image = models.ImageField(upload_to='specimen_pictures')
+    high_interest = models.BooleanField("High resolution/species representative")
+    specimen = models.ForeignKey(Specimen)
+
 

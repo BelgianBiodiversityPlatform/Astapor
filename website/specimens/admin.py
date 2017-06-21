@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 from django import forms
-from .models import Specimen, SpecimenLocation, Person, Fixation, Station, Expedition
+from .models import Specimen, SpecimenLocation, Person, Fixation, Station, Expedition, SpecimenPicture
 from .widgets import LatLongWidget
 
 
@@ -16,6 +16,9 @@ class MyAdminForm(forms.ModelForm):
         }
 
 
+class SpecimenPictureInline(admin.TabularInline):
+    model = SpecimenPicture
+
 @admin.register(Specimen)
 class SpecimenAdmin(admin.ModelAdmin):
     form = MyAdminForm
@@ -25,6 +28,9 @@ class SpecimenAdmin(admin.ModelAdmin):
     search_fields = ['scientific_name', 'specimen_id']
     # TODO: document searchable fields in template? (https://stackoverflow.com/questions/11411622/add-help-text-for-search-field-in-admin-py)
 
+    inlines = [
+        SpecimenPictureInline,
+    ]
 
 @admin.register(SpecimenLocation)
 class SpecimenLocationAdmin(admin.ModelAdmin):
@@ -48,5 +54,8 @@ class StationAdmin(admin.ModelAdmin):
 class ExpeditionAdmin(admin.ModelAdmin):
     pass
 
+@admin.register(SpecimenPicture)
+class SpecimenPictureAdmin(admin.ModelAdmin):
+    pass
 
 admin.site.site_header = 'Astapor administration'

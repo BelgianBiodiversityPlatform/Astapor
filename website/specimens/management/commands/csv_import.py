@@ -24,7 +24,7 @@ def get_or_create_station_and_expedition(station_name, expedition_name):
     """
     if station_name == '':
         station_name = UNKNOWN_STATION_NAME
-        
+
     try: # A station already exists for the correct expedition?
         return Station.objects.get(name=station_name, expedition__name=expedition_name)
 
@@ -61,13 +61,16 @@ class Command(BaseCommand):
                 self.stdout.write('Processing row #{i}...'.format(i=i), ending='')
                 specimen = Specimen()
 
+                specimen.specimen_id = row['Specimen_id'].strip()
+
+                self.stdout.write('Specimen ID is {id}...'.format(id=specimen.specimen_id), ending='')
                 specimen.station = get_or_create_station_and_expedition(row['Station'].strip(), row['Expedition'].strip())
 
-                # Identificators
+                # Identifiers
                 identified_by = row['Identified_by'].strip()
                 id_first_name, id_last_name = identified_by.split()
-                identificator, _ = Person.objects.get_or_create(first_name=id_first_name, last_name=id_last_name)
-                specimen.identified_by = identificator
+                identifier, _ = Person.objects.get_or_create(first_name=id_first_name, last_name=id_last_name)
+                specimen.identified_by = identifier
 
                 # Specimen locations
                 specimen_location, _ = SpecimenLocation.objects.get_or_create(name=row['Specimen_location'])
@@ -84,7 +87,6 @@ class Command(BaseCommand):
                 if fixation:
                     specimen.fixation, _ = Fixation.objects.get_or_create(name=fixation)
 
-
                 specimen.comment = row['Comment']
 
                 depth = row['Depth'].strip()
@@ -97,7 +99,6 @@ class Command(BaseCommand):
                     specimen.depth = NumericRange(float(d_min.replace(',','.')), float(d_max.replace(',','.')), bounds='[]')
 
                 specimen.scientific_name = row['Scientific_name']
-                specimen.specimen_id = row['Specimen_id']
                 specimen.save()
                 self.stdout.write(self.style.SUCCESS('OK'))
 

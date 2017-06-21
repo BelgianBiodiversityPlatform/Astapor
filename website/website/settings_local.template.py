@@ -12,3 +12,6 @@ DATABASES = {
         'NAME': 'mydatabase',
     },
 }
+
+MEDIA_ROOT = ''
+MEDIA_URL = ''
