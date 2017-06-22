@@ -11,7 +11,6 @@ from specimens.models import Person, SpecimenLocation, Specimen, Fixation, Exped
 MODELS_TO_TRUNCATE = [Station, Expedition, Fixation, Person, SpecimenLocation, Specimen]
 
 # TODO: document use of this script:
-# - export Google Sheet (specimens) as CSV (separator: comma)
 # - Column name is important, not column order
 # - Lat/lon use comma as a separator
 
@@ -35,7 +34,7 @@ def get_or_create_station_and_expedition(station_name, expedition_name):
 
 
 class Command(BaseCommand):
-    help = 'Initial data import to populate the tables'
+    help = 'Import specimens from a CSV file and attach them to the existing taxonomy.'
 
     def add_arguments(self, parser):
         parser.add_argument('csv_file')

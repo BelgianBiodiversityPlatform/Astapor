@@ -1,7 +1,55 @@
 from django.contrib.gis.db import models
 from django.contrib.postgres.fields import FloatRangeField
 
+from mptt.models import MPTTModel, TreeForeignKey
+
 UNKNOWN_STATION_NAME = '<Unknown>'  # Sometimes we need a "fake" station to link Specimen to Expedition
+
+# Ranks: Sometimes names are used as an identifier...
+SPECIES_RANK_NAME = "Species"
+SUBGENUS_RANK_NAME = "Subgenus"
+
+class TaxonRank(models.Model):
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
+
+class TaxonStatus(models.Model):
+    name = models.CharField(max_length=100)
+
+class Taxon(MPTTModel):
+    name = models.CharField(max_length=100)
+    rank = models.ForeignKey(TaxonRank)
+    status = models.ForeignKey(TaxonStatus, null=True, blank=True)
+    aphia_id = models.IntegerField(null=True, blank=True)
+    authority = models.CharField(max_length=100, null=True, blank=True)
+
+    parent = TreeForeignKey('self', null=True, blank=True, related_name='children', db_index=True)
+
+    def is_species(self):
+        return self.rank.name == SPECIES_RANK_NAME
+
+    def is_subgenus(self):
+        return self.rank.name == SUBGENUS_RANK_NAME
+
+    def __str__(self):
+        # Specific representation for Species
+        if self.is_species():
+            if self.parent.is_subgenus():
+                name = "{genus_name} ({subgenus_name}) {species_name}".format(species_name=self.name,
+                                                                             subgenus_name=self.parent.name,
+                                                                             genus_name=self.parent.parent.name)
+            else:
+                name = "{genus_name} {species_name} ".format(species_name=self.name, genus_name=self.parent.name)
+        else:
+            name = self.name
+
+        return "{name} [{rank}]".format(name=name, rank=self.rank)
+
+    class MPTTMeta:
+        order_insertion_by = ['name']
+
 
 class Person(models.Model):
     first_name = models.CharField(max_length=100)

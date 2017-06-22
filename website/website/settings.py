@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.gis',
     'export_action',
     'specimens',
+    'mptt',
 ]
 
 MIDDLEWARE = [

@@ -1,7 +1,10 @@
 from django.contrib import admin
 
 from django import forms
-from .models import Specimen, SpecimenLocation, Person, Fixation, Station, Expedition, SpecimenPicture
+
+from mptt.admin import DraggableMPTTAdmin
+
+from .models import Specimen, SpecimenLocation, Person, Fixation, Station, Expedition, SpecimenPicture, Taxon
 from .widgets import LatLongWidget
 
 
@@ -65,5 +68,9 @@ class ExpeditionAdmin(admin.ModelAdmin):
 @admin.register(SpecimenPicture)
 class SpecimenPictureAdmin(admin.ModelAdmin):
     fields = ('specimen', 'image', 'high_interest')
+
+@admin.register(Taxon)
+class TaxonAdmin(DraggableMPTTAdmin):
+    pass
 
 admin.site.site_header = 'Astapor administration'
