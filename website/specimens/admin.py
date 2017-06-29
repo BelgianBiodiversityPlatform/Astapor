@@ -26,9 +26,9 @@ class SpecimenPictureInline(admin.TabularInline):
 class SpecimenAdmin(admin.ModelAdmin):
     form = MyAdminForm
 
-    list_display = ('specimen_id', 'station', 'scientific_name', 'identified_by', 'specimen_location', 'depth_str', 'fixation')
+    list_display = ('specimen_id', 'station', 'initial_scientific_name', 'identified_by', 'specimen_location', 'depth_str', 'fixation')
     list_filter = ('identified_by', 'specimen_location', 'fixation', 'station__expedition')
-    search_fields = ['scientific_name', 'specimen_id']
+    search_fields = ['initial_scientific_name', 'specimen_id']
     # TODO: document searchable fields in template? (https://stackoverflow.com/questions/11411622/add-help-text-for-search-field-in-admin-py)
 
     inlines = [

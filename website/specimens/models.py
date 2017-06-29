@@ -15,8 +15,15 @@ class TaxonRank(models.Model):
     def __str__(self):
         return self.name
 
+
 class TaxonStatus(models.Model):
     name = models.CharField(max_length=100)
+
+
+class SpeciesManager(models.Manager):
+    def get_queryset(self):
+        return super(SpeciesManager, self).get_queryset().filter(rank__name=SPECIES_RANK_NAME)
+
 
 class Taxon(MPTTModel):
     name = models.CharField(max_length=100)
@@ -27,21 +34,28 @@ class Taxon(MPTTModel):
 
     parent = TreeForeignKey('self', null=True, blank=True, related_name='children', db_index=True)
 
+    objects = models.Manager()
+    species_objects = SpeciesManager()
+
     def is_species(self):
         return self.rank.name == SPECIES_RANK_NAME
 
     def is_subgenus(self):
         return self.rank.name == SUBGENUS_RANK_NAME
 
+    def species_name(self):  # Only work for species!!
+        if self.parent.is_subgenus():
+            name = "{genus_name} ({subgenus_name}) {species_name}".format(species_name=self.name,
+                                                                          subgenus_name=self.parent.name,
+                                                                          genus_name=self.parent.parent.name)
+        else:
+            name = "{genus_name} {species_name}".format(species_name=self.name, genus_name=self.parent.name)
+        return name
+
     def __str__(self):
         # Specific representation for Species
         if self.is_species():
-            if self.parent.is_subgenus():
-                name = "{genus_name} ({subgenus_name}) {species_name}".format(species_name=self.name,
-                                                                             subgenus_name=self.parent.name,
-                                                                             genus_name=self.parent.parent.name)
-            else:
-                name = "{genus_name} {species_name} ".format(species_name=self.name, genus_name=self.parent.name)
+            name = self.species_name()
         else:
             name = self.name
 
@@ -96,7 +110,8 @@ class Station(models.Model):
 
 class Specimen(models.Model):
     specimen_id = models.IntegerField(unique=True)  # ID from the lab, not Django's PK
-    scientific_name = models.CharField(max_length=100)
+    initial_scientific_name = models.CharField(max_length=100)
+    taxon = models.ForeignKey(Taxon, null=True, blank=True)
     coords = models.PointField("Coordinates", blank=True, null=True)
     depth = FloatRangeField(blank=True, null=True, help_text="Unit: meters.")
     identified_by = models.ForeignKey(Person)
@@ -118,8 +133,10 @@ class Specimen(models.Model):
     depth_str.short_description = 'Depth'
 
     def __str__(self):
-        return "Specimen #{specimen_id} ({scientific_name})".format(specimen_id=self.specimen_id,
-                                                                    scientific_name=self.scientific_name)
+        return "Specimen #{specimen_id}".format(specimen_id=self.specimen_id)
+
+    class Meta:
+        ordering = ['specimen_id']
 
 
 class SpecimenPicture(models.Model):

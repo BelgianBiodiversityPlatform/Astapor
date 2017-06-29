@@ -34,7 +34,7 @@ def get_or_create_station_and_expedition(station_name, expedition_name):
 
 
 class Command(BaseCommand):
-    help = 'Import specimens from a CSV file and attach them to the existing taxonomy.'
+    help = 'Import specimens from a CSV file'
 
     def add_arguments(self, parser):
         parser.add_argument('csv_file')
@@ -97,7 +97,7 @@ class Command(BaseCommand):
 
                     specimen.depth = NumericRange(float(d_min.replace(',','.')), float(d_max.replace(',','.')), bounds='[]')
 
-                specimen.scientific_name = row['Scientific_name']
+                specimen.initial_scientific_name = row['Scientific_name']
                 specimen.save()
                 self.stdout.write(self.style.SUCCESS('OK'))
 
