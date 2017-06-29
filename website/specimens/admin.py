@@ -1,5 +1,5 @@
 from django.contrib import admin
-
+from django.utils.translation import ugettext_lazy as _
 from django import forms
 
 from mptt.admin import DraggableMPTTAdmin
@@ -22,12 +22,31 @@ class MyAdminForm(forms.ModelForm):
 class SpecimenPictureInline(admin.TabularInline):
     model = SpecimenPicture
 
+
+class HasTaxonListFilter(admin.SimpleListFilter):
+    title = _('Attached to a Taxon')
+
+    parameter_name = 'choice'
+
+    def lookups(self, request, model_admin):
+        return (
+            ('yes', _('Yes')),
+            ('no', _('No')),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == 'yes':
+            return queryset.filter(taxon__isnull=False)
+        if self.value() == 'no':
+            return queryset.filter(taxon__isnull=True)
+
+
 @admin.register(Specimen)
 class SpecimenAdmin(admin.ModelAdmin):
     form = MyAdminForm
 
     list_display = ('specimen_id', 'station', 'taxon', 'initial_scientific_name', 'identified_by', 'specimen_location', 'depth_str', 'fixation')
-    list_filter = ('identified_by', 'specimen_location', 'fixation', 'station__expedition')
+    list_filter = ('identified_by', 'specimen_location', 'fixation', 'station__expedition', HasTaxonListFilter)
     search_fields = ['initial_scientific_name', 'specimen_id']
     # TODO: document searchable fields in template? (https://stackoverflow.com/questions/11411622/add-help-text-for-search-field-in-admin-py)
 
