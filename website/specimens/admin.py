@@ -23,11 +23,7 @@ class SpecimenPictureInline(admin.TabularInline):
     model = SpecimenPicture
 
 
-class HasTaxonListFilter(admin.SimpleListFilter):
-    title = _('Attached to a Taxon')
-
-    parameter_name = 'choice'
-
+class HasFKListFilter(admin.SimpleListFilter):
     def lookups(self, request, model_admin):
         return (
             ('yes', _('Yes')),
@@ -35,10 +31,18 @@ class HasTaxonListFilter(admin.SimpleListFilter):
         )
 
     def queryset(self, request, queryset):
+        lookup_key = '{0}__isnull'.format(self.fk_field_name)
+
         if self.value() == 'yes':
-            return queryset.filter(taxon__isnull=False)
+            return queryset.filter(**{lookup_key: False})
         if self.value() == 'no':
-            return queryset.filter(taxon__isnull=True)
+            return queryset.filter(**{lookup_key: True})
+
+
+class HasTaxonListFilter(HasFKListFilter):
+    parameter_name = 'has_taxon'
+    fk_field_name = 'taxon'
+    title = _('Attached to a Taxon')
 
 
 @admin.register(Specimen)
