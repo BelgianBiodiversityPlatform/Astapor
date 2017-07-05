@@ -8,6 +8,8 @@ UNKNOWN_STATION_NAME = '<Unknown>'  # Sometimes we need a "fake" station to link
 # Ranks: Sometimes names are used as an identifier...
 SPECIES_RANK_NAME = "Species"
 SUBGENUS_RANK_NAME = "Subgenus"
+GENUS_RANK_NAME = "Genus"
+
 
 class TaxonRank(models.Model):
     name = models.CharField(max_length=100)
@@ -25,6 +27,11 @@ class SpeciesManager(models.Manager):
         return super(SpeciesManager, self).get_queryset().filter(rank__name=SPECIES_RANK_NAME)
 
 
+class GenusManager(models.Manager):
+    def get_queryset(self):
+        return super(GenusManager, self).get_queryset().filter(rank__name=GENUS_RANK_NAME)
+
+
 class Taxon(MPTTModel):
     name = models.CharField(max_length=100)
     rank = models.ForeignKey(TaxonRank)
@@ -35,13 +42,18 @@ class Taxon(MPTTModel):
     parent = TreeForeignKey('self', null=True, blank=True, related_name='children', db_index=True)
 
     objects = models.Manager()
+
     species_objects = SpeciesManager()
+    genus_objects = GenusManager()
 
     def is_species(self):
         return self.rank.name == SPECIES_RANK_NAME
 
     def is_subgenus(self):
         return self.rank.name == SUBGENUS_RANK_NAME
+
+    def is_genus(self):
+        return self.rank.name == GENUS_RANK_NAME
 
     def species_name(self):  # Only work for species!!
         if self.parent.is_subgenus():

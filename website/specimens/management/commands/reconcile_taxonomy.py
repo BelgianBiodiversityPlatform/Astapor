@@ -21,28 +21,43 @@ class Command(BaseCommand):
             self.stdout.write("--all: we will also reconcile Specimens that are already linked to a Taxon.")
 
         all_species = Taxon.species_objects.all()
+        all_genus = Taxon.genus_objects.all()
 
         total_specimens_count = 0
         matched_specimens_count = 0
 
         for specimen in Specimen.objects.all():
+            name_to_match = specimen.initial_scientific_name
+            taxon_found = False
+
             if (not specimen.taxon) or options['reconcile_all']:
                 total_specimens_count += 1
-                matched_specimens_count += 1  # We'll decrement later if nothing is found...
                 self.stdout.write('Specimen {s} (initial scientific name: {sn})...'.format(s=specimen,
-                                                                                           sn=specimen.initial_scientific_name),
+                                                                                           sn=name_to_match),
                                   ending='')
 
                 # Best case: exact match on species name
-                found = next((species for species in all_species if species.species_name() == specimen.initial_scientific_name), None)
-                if found:
+                species_found = next((species for species in all_species if species.species_name() == name_to_match), None)
+                if species_found:
+                    taxon_found = True
                     self.stdout.write(self.style.SUCCESS('EXACT SPECIES MATCH ON SCIENTIFIC NAME'))
-                    specimen.taxon = found
-                else:
-                    matched_specimens_count -= 1
-                    self.stdout.write(self.style.ERROR('No matching taxon found'))
+                    specimen.taxon = species_found
+                elif name_to_match.endswith('sp'):
+                    # No species match, we look for a Genus
+                    self.stdout.write("Dropping 'sp' and looking for a genus...", ending='')
+                    name_to_match = name_to_match[:-3]
 
-                specimen.save()
+                    genus_found = next((genus for genus in all_genus if genus.name == name_to_match), None)
+                    if genus_found:
+                        taxon_found = True
+                        self.stdout.write(self.style.SUCCESS('EXACT SPECIES MATCH ON GENUS NAME'))
+                        specimen.taxon = genus_found
+
+                if taxon_found:
+                    matched_specimens_count += 1
+                    specimen.save()
+                else:
+                    self.stdout.write(self.style.ERROR('No matching taxon found'))
 
         self.stdout.write("End: matched {cm}/{ct} taxon ({pc} percent).".format(cm=matched_specimens_count,
                                                                                 ct=total_specimens_count,
