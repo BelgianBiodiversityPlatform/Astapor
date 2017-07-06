@@ -10,16 +10,24 @@
 
         var conf = {
             // Map
-            'map_container_selector': $('.field-coords div:first-child'),
-            'map_imagery_date': '2017-01-16',
+            mapContainerSelector: $('.field-coords div:first-child'),
+            width: 800, // pixels
+            height: 600, // pixels
+            imageryDate: '2017-01-16',
+            projection: {
+                code: 'EPSG:3031',
+                def: "+proj=stere +lat_0=-90 +lat_ts=-71 +lon_0=0 +k=1 +x_0=0 +y_0=0 " +
+                     "+datum=WGS84 +units=m +no_defs",
+                validityExtent: [-4194304, -4194304, 4194304, 4194304]
+            },
 
             // Scientific name suggestion
-            'snsuggest_container_selector': $('.field-scientific_name div:first-child'),
-            'sn_value_selector': $("#id_scientific_name"),
+            snsuggest_container_selector: $('.field-scientific_name div:first-child'),
+            sn_value_selector: $("#id_scientific_name"),
 
-            'icon_success': '{% static "admin/img/icon-yes.svg" %}',
-            'icon_warning': '{% static "admin/img/icon-alert.svg" %}',
-            'icon_error': '{% static "admin/img/icon-no.svg" %}'
+            icon_success: '{% static "admin/img/icon-yes.svg" %}',
+            icon_warning: '{% static "admin/img/icon-alert.svg" %}',
+            icon_error: '{% static "admin/img/icon-no.svg" %}'
         };
 
         var exactMatchAction = function (r) {
@@ -84,29 +92,27 @@
             })
         };
 
-        var ShowBaseMap = function () {
-            proj4.defs("EPSG:3031",
-                "+proj=stere +lat_0=-90 +lat_ts=-71 +lon_0=0 +k=1 +x_0=0 +y_0=0 " +
-                "+datum=WGS84 +units=m +no_defs");
-            ol.proj.get("EPSG:3031").setExtent([-4194304, -4194304, 4194304, 4194304]);
+        var ShowBaseMap = function (mapId) {
+            proj4.defs(conf.projection.code, conf.projection.def);
+            ol.proj.get(conf.projection.code).setExtent(conf.projection.validityExtent);
 
             var map = new ol.Map({
                 view: new ol.View({
                     maxResolution: 8192.0,
-                    projection: ol.proj.get("EPSG:3031"),
-                    extent: [-4194304, -4194304, 4194304, 4194304],
+                    projection: ol.proj.get(conf.projection.code),
+                    extent: conf.projection.validityExtent,
                     center: [0, 0],
                     zoom: 0,
                     maxZoom: 5,
                 }),
-                target: "map",
+                target: mapId,
                 renderer: ["canvas", "dom"],
             });
 
             var source = new ol.source.WMTS({
-                url: "//map1{a-c}.vis.earthdata.nasa.gov/wmts-antarctic/wmts.cgi?TIME=" + conf.map_imagery_date,
+                url: "//map1{a-c}.vis.earthdata.nasa.gov/wmts-antarctic/wmts.cgi?TIME=" + conf.imageryDate,
                 layer: "MODIS_Terra_CorrectedReflectance_TrueColor",
-                extent: [-4194304, -4194304, 4194304, 4194304],
+                extent: conf.projection.validityExtent,
                 format: "image/jpeg",
                 matrixSet: "EPSG3031_250m",
 
@@ -136,7 +142,7 @@
         var ShowPoint = function (map, lat, lon) {
             var vectorSource = new ol.source.Vector({
                 features: [new ol.Feature({
-                    geometry: new ol.geom.Point(ol.proj.transform([lon, lat], 'EPSG:4326', 'EPSG:3031'))
+                    geometry: new ol.geom.Point(ol.proj.transform([lon, lat], 'EPSG:4326', conf.projection.code))
                 })]
             });
 
@@ -147,8 +153,8 @@
             map.addLayer(vectorLayer);
         };
 
-        var ShowMap = function () {
-            map = ShowBaseMap();
+        var ShowMap = function (mapId) {
+            map = ShowBaseMap(mapId);
             ShowPoint(map, -73, 167)
         };
 
@@ -162,8 +168,10 @@
             conf.sn_value_selector.on('input', GBIFSpeciesMatch);
 
             // 2. OL map
-            conf.map_container_selector.append('<div id="map" style="width: 800px; height: 600px;"></div>');
-            ShowMap();
+            var mapId = "map";
+
+            conf.mapContainerSelector.append('<div id="' + mapId + '" style="width: ' + conf.width + 'px; height: ' + conf.height + 'px";></div>');
+            ShowMap(mapId);
         });
     </script>
 
