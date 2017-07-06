@@ -8,9 +8,13 @@
     <script type="text/javascript">
         var $ = django.jQuery;
 
+        var vectorSource = new ol.source.Vector(); // global, reused between function calls
+
         var conf = {
             // Map
             mapContainerSelector: $('.field-coords div:first-child'),
+            lonFieldSelector: $('#id_coords_0'),
+            latFieldSelector: $('#id_coords_1'),
             width: 800, // pixels
             height: 600, // pixels
             imageryDate: '2017-01-16',
@@ -92,7 +96,7 @@
             })
         };
 
-        var ShowBaseMap = function (mapId) {
+        var showBaseMap = function (mapId) {
             proj4.defs(conf.projection.code, conf.projection.def);
             ol.proj.get(conf.projection.code).setExtent(conf.projection.validityExtent);
 
@@ -131,33 +135,23 @@
                 })
             });
 
-            var layer = new ol.layer.Tile({source: source});
+            var baseMap = new ol.layer.Tile({source: source});
 
-            map.addLayer(layer);
+            var vectorLayer = new ol.layer.Vector({source: vectorSource});
+
+            map.addLayer(baseMap);
+            map.addLayer(vectorLayer);
 
             return map;
         };
 
         // lat/lon: EPSG 4326
-        var ShowPoint = function (map, lat, lon) {
-            var vectorSource = new ol.source.Vector({
-                features: [new ol.Feature({
+        var ShowPoint = function (lat, lon) {
+            vectorSource.clear();
+            vectorSource.addFeature(new ol.Feature({
                     geometry: new ol.geom.Point(ol.proj.transform([lon, lat], 'EPSG:4326', conf.projection.code))
-                })]
-            });
-
-            var vectorLayer = new ol.layer.Vector({
-                source: vectorSource
-            });
-
-            map.addLayer(vectorLayer);
+            }));
         };
-
-        var ShowMap = function (mapId) {
-            map = ShowBaseMap(mapId);
-            ShowPoint(map, -73, 167)
-        };
-
 
         $(function () {
             // 1. Scientific name match
@@ -171,7 +165,14 @@
             var mapId = "map";
 
             conf.mapContainerSelector.append('<div id="' + mapId + '" style="width: ' + conf.width + 'px; height: ' + conf.height + 'px";></div>');
-            ShowMap(mapId);
+            var map = showBaseMap(mapId);
+
+            ShowPoint(conf.latFieldSelector.val(), conf.lonFieldSelector.val());
+
+            conf.lonFieldSelector.add(conf.latFieldSelector).change(function(){
+                ShowPoint(conf.latFieldSelector.val(), conf.lonFieldSelector.val());
+            });
+
         });
     </script>
 
