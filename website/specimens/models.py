@@ -1,5 +1,6 @@
 from django.contrib.gis.db import models
 from django.contrib.postgres.fields import FloatRangeField
+from django.core.exceptions import ObjectDoesNotExist
 
 from mptt.models import MPTTModel, TreeForeignKey
 
@@ -38,6 +39,16 @@ class FamilyManager(models.Manager):
         return super(FamilyManager, self).get_queryset().filter(rank__name=FAMILY_RANK_NAME)
 
 
+class TaxonManager(models.Manager):
+    def get_subgenus_from_parentheses_form(self, parentheses_string):
+        # Given a string such as "Cheiraster (Luidiaster)", returns the matching subgenus, if exists
+        genus_name, subgenus_name = parentheses_string.replace('(', '').replace(')', '').split()
+        try:
+            return self.get_queryset().get(rank__name=SUBGENUS_RANK_NAME,
+                                           parent__name=genus_name,
+                                           name=subgenus_name)
+        except ObjectDoesNotExist:
+            return None
 
 class Taxon(MPTTModel):
     name = models.CharField(max_length=100)
@@ -48,7 +59,7 @@ class Taxon(MPTTModel):
 
     parent = TreeForeignKey('self', null=True, blank=True, related_name='children', db_index=True)
 
-    objects = models.Manager()
+    objects = TaxonManager()
 
     species_objects = SpeciesManager()
     genus_objects = GenusManager()
@@ -139,6 +150,9 @@ class Specimen(models.Model):
     fixation = models.ForeignKey(Fixation, blank=True, null=True)
     comment = models.TextField(blank=True, null=True)
     station = models.ForeignKey(Station)
+
+    def has_pictures(self):
+        return self.specimenpicture_set.count() > 0
 
     def depth_str(self):
         if self.depth:

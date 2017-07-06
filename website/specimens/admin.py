@@ -45,12 +45,20 @@ class HasTaxonListFilter(HasFKListFilter):
     title = _('Attached to a Taxon')
 
 
+class HasPicturesListFilter(HasFKListFilter):
+    parameter_name = 'has_pictures'
+    fk_field_name = 'specimenpicture'
+    title = _('Has pictures')
+
+
 @admin.register(Specimen)
 class SpecimenAdmin(admin.ModelAdmin):
     form = MyAdminForm
 
-    list_display = ('specimen_id', 'station', 'taxon', 'initial_scientific_name', 'identified_by', 'specimen_location', 'depth_str', 'fixation')
-    list_filter = ('identified_by', 'specimen_location', 'fixation', 'station__expedition', HasTaxonListFilter)
+    list_display = ('specimen_id', 'station', 'has_picture', 'taxon', 'initial_scientific_name', 'identified_by',
+                    'specimen_location', 'depth_str', 'fixation')
+    list_filter = ('identified_by', 'specimen_location', 'fixation', 'station__expedition', HasTaxonListFilter,
+                   HasPicturesListFilter)
     search_fields = ['initial_scientific_name', 'specimen_id']
     # TODO: document searchable fields in template? (https://stackoverflow.com/questions/11411622/add-help-text-for-search-field-in-admin-py)
 
@@ -61,6 +69,11 @@ class SpecimenAdmin(admin.ModelAdmin):
     inlines = [
         SpecimenPictureInline,
     ]
+
+    def has_picture(self, obj):
+        return obj.has_pictures()
+    has_picture.short_description = 'Has pictures?'
+    has_picture.boolean = True
 
     class Media:
         css = {
