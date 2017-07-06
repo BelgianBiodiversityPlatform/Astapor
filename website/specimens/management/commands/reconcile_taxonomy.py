@@ -46,6 +46,7 @@ class Command(BaseCommand):
         for specimen in Specimen.objects.all():
             name_to_match = specimen.initial_scientific_name
             initial_sn_length = len(specimen.initial_scientific_name.split())
+            name_contains_parentheses = '(' in name_to_match or ')' in name_to_match
             taxon_found = False
 
             if (not specimen.taxon) or options['reconcile_all']:
@@ -65,7 +66,7 @@ class Command(BaseCommand):
                     specimen.taxon = get_species_with_name(name_to_match)
                 elif name_to_match.endswith('sp') or name_to_match.endswith('sp.'):
                     # No species match, we look for a Genus
-                    self.stdout.write("Case 3: Dropping 'sp'/'sp.' and looking for a genus...", ending='')
+                    self.stdout.write("Case 3: Dropping 'sp'/'sp.' and looking for a genus or subgenus...", ending='')
                     if name_to_match.endswith('sp'):
                         name_to_match = name_to_match[:-3]
                     elif name_to_match.endswith('sp.'):
@@ -76,8 +77,18 @@ class Command(BaseCommand):
                         taxon_found = True
                         self.stdout.write(self.style.SUCCESS('EXACT MATCH ON GENUS NAME after dropping sp/sp.'))
                         specimen.taxon = genus_found
+                    elif name_contains_parentheses:
+                        # If we have the form 'Cheiraster (Luidiaster) sp', we can try to match it to the subgenus
+                        sg_found = Taxon.objects.get_subgenus_from_parentheses_form(name_to_match)
+                        if sg_found:
+                            taxon_found = True
+                            self.stdout.write(self.style.SUCCESS('EXACT MATCH ON SUBGENUS NAME after dropping sp/sp.'))
+                            specimen.taxon = sg_found
+                        else:
+                            self.stdout.write(self.style.ERROR('NO MATCHING SUBGENUS FOUND'))
                     else:
-                        self.stdout.write(self.style.ERROR('NO MATCHING GENUS FOUND'))
+                        self.stdout.write(self.style.ERROR('NO MATCH FOUND IN CASE 3.'))
+
 
                 # two words, string ends with " sp" followed by digits
                 elif initial_sn_length == 2 and (re.search(SPXXX_REGEXP, name_to_match)):
