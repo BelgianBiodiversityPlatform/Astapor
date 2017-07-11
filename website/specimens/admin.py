@@ -63,7 +63,7 @@ class SpecimenAdmin(admin.ModelAdmin):
     # TODO: document searchable fields in template? (https://stackoverflow.com/questions/11411622/add-help-text-for-search-field-in-admin-py)
 
     fields = ('specimen_id', ('taxon', 'initial_scientific_name'), 'station', 'coords', 'depth', 'identified_by',
-              'specimen_location', 'fixation', 'comment')
+              'specimen_location', 'fixation', 'vial', 'comment')
     readonly_fields = ('initial_scientific_name',)
 
     inlines = [

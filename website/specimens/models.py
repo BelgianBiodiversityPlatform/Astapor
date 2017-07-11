@@ -1,6 +1,6 @@
 from django.contrib.gis.db import models
 from django.contrib.postgres.fields import FloatRangeField
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, ValidationError
 
 from mptt.models import MPTTModel, TreeForeignKey
 
@@ -150,6 +150,8 @@ class Specimen(models.Model):
     fixation = models.ForeignKey(Fixation, blank=True, null=True)
     comment = models.TextField(blank=True, null=True)
     station = models.ForeignKey(Station)
+    # Reference of the small container for the captured animal. Unique per expedition.
+    vial = models.CharField(max_length=100, blank=True, null=True)
 
     def has_pictures(self):
         return self.specimenpicture_set.count() > 0
@@ -165,6 +167,24 @@ class Specimen(models.Model):
 
         return str
     depth_str.short_description = 'Depth'
+
+    def clean(self):
+        is_new = self.pk is None
+
+        if self.vial:
+            match_obj = Specimen.objects.filter(vial=self.vial, station__expedition=self.station.expedition)
+            if is_new:  # New specimen: should have 0
+                if match_obj.count() > 0:
+                    raise ValidationError("Vial should be unique for a given expedition")
+            else:
+                # Existing specimen: there might already be a matching specimen, but it must be me
+                the_obj = match_obj.get()
+                if the_obj.pk != self.pk:
+                    raise ValidationError("Vial should be unique for a given expedition")
+
+    def save(self, *args, **kwargs):
+        self.full_clean()  # We want our custom clean method to be called at save()
+        return super(Specimen, self).save(*args, **kwargs)
 
     def __str__(self):
         return "Specimen #{specimen_id}".format(specimen_id=self.specimen_id)

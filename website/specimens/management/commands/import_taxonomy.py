@@ -19,6 +19,7 @@ def create_initial_ranks():
         TaxonRank(name=SPECIES_RANK_NAME)
     ])
 
+
 class Command(BaseCommand):
     help = 'Import taxonomy from a CSV file.'
 

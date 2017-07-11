@@ -97,6 +97,10 @@ class Command(BaseCommand):
 
                     specimen.depth = NumericRange(float(d_min.replace(',','.')), float(d_max.replace(',','.')), bounds='[]')
 
+                vial = row['Vial'].strip()
+                if vial:
+                    specimen.vial = vial
+
                 specimen.initial_scientific_name = row['Scientific_name']
                 specimen.save()
                 self.stdout.write(self.style.SUCCESS('OK'))
