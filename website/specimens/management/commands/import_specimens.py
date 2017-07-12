@@ -101,6 +101,10 @@ class Command(BaseCommand):
                 if vial:
                     specimen.vial = vial
 
+                mnhn_number = row['Numero_mnhn'].strip()
+                if mnhn_number:
+                    specimen.mnhn_number = mnhn_number
+
                 specimen.initial_scientific_name = row['Scientific_name']
                 specimen.save()
                 self.stdout.write(self.style.SUCCESS('OK'))

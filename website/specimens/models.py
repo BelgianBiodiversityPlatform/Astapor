@@ -2,6 +2,8 @@ from django.contrib.gis.db import models
 from django.contrib.postgres.fields import FloatRangeField
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 
+from django.conf import settings
+
 from mptt.models import MPTTModel, TreeForeignKey
 
 UNKNOWN_STATION_NAME = '<Unknown>'  # Sometimes we need a "fake" station to link Specimen to Expedition
@@ -150,8 +152,11 @@ class Specimen(models.Model):
     fixation = models.ForeignKey(Fixation, blank=True, null=True)
     comment = models.TextField(blank=True, null=True)
     station = models.ForeignKey(Station)
+
     # Reference of the small container for the captured animal. Unique per expedition.
     vial = models.CharField(max_length=100, blank=True, null=True)
+
+    mnhn_number = models.CharField(max_length=100, blank=True, null=True)
 
     def has_pictures(self):
         return self.specimenpicture_set.count() > 0
@@ -171,7 +176,7 @@ class Specimen(models.Model):
     def clean(self):
         is_new = self.pk is None
 
-        if self.vial:
+        if self.vial and not settings.DISABLE_VIAL_UNIQUENESS_VALIDATION:
             match_obj = Specimen.objects.filter(vial=self.vial, station__expedition=self.station.expedition)
             if is_new:  # New specimen: should have 0
                 if match_obj.count() > 0:
