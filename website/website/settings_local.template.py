@@ -7,7 +7,7 @@ SECRET_KEY = 'XXXX'
 # Use PostGIS for this project
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
+        'ENGINE': 'django.contrib.gis.db.backends.postgis',
         'USER': 'mydatabaseuser',
         'NAME': 'mydatabase',
     },
