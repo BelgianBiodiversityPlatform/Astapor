@@ -64,8 +64,10 @@ class SpecimenAdmin(admin.ModelAdmin):
 
     fields = ('specimen_id', ('taxon', 'initial_scientific_name'), 'station', 'coords', 'depth', 'identified_by',
               'specimen_location', 'fixation', 'vial', 'mnhn_number', 'mna_code', 'bold_process_id', 'bold_sample_id',
-              'bold_bin', 'sequence_name', 'comment')
-    readonly_fields = ('initial_scientific_name',)
+              'bold_bin', 'sequence_name',
+                ('capture_date_start', 'capture_date_end', 'initial_capture_year', 'initial_capture_date'),
+              'comment')
+    readonly_fields = ('initial_scientific_name', 'initial_capture_year', 'initial_capture_date')
 
     inlines = [
         SpecimenPictureInline,

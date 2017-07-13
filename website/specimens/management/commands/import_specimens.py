@@ -106,8 +106,6 @@ class Command(BaseCommand):
                         self.stdout.write(
                             self.style.SUCCESS('Created new Fixation: {0}...'.format(specimen.fixation)),ending='')
 
-                specimen.comment = row['Comment']
-
                 depth = row['Depth'].strip()
                 if depth:
                     if '-' in depth: # It's a range
@@ -124,8 +122,14 @@ class Command(BaseCommand):
                 specimen.bold_sample_id = row['BOLD Sample ID'].strip()
                 specimen.bold_bin = row['BOLD BIN'].strip()
                 specimen.sequence_name = row['Sequence_name'].strip()
-                
+
+                # Load raw/messy/imprecise dates:
+                specimen.initial_capture_year = row['Year'].strip()
+                specimen.initial_capture_date = row['Date'].strip()
+
                 specimen.initial_scientific_name = row['Scientific_name'].strip()
+
+                specimen.comment = row['Comment'].strip()
 
                 specimen.save()
                 self.stdout.write(self.style.SUCCESS('OK'))

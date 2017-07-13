@@ -1,6 +1,9 @@
+import datetime
+
 from django.contrib.gis.db import models
 from django.contrib.postgres.fields import FloatRangeField
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.utils.translation import ugettext_lazy as _
 
 from django.conf import settings
 
@@ -13,6 +16,13 @@ SPECIES_RANK_NAME = "Species"
 SUBGENUS_RANK_NAME = "Subgenus"
 GENUS_RANK_NAME = "Genus"
 FAMILY_RANK_NAME = "Family"
+
+
+# TODO: move validator in different file
+def plausible_specimen_date(value):
+    year = value.year
+    if year < 2005 or value > datetime.date.today():
+        raise ValidationError(_('Specimen capture dates should be between 2005-01-01 and today'))
 
 
 class TaxonRank(models.Model):
@@ -162,6 +172,23 @@ class Specimen(models.Model):
     bold_sample_id = models.CharField(max_length=100, blank=True)
     bold_bin = models.CharField(max_length=100, blank=True)
     sequence_name = models.CharField(max_length=100, blank=True)
+
+    # Date management:
+    # In initial data, we have messy and sometimes imprecise dates in two fields (date and year)
+    # - Those two are imported in the raw initial_date and initial_year fields (read-only so they can't be changed after
+    # import)
+    # For 'real app use', we use the capture_date_start and capture_date_end date fields (avoided Postgres native
+    # daterange type, since it always returns [,) intervals.
+    #
+    # At import, we try to figure out the messy things in raw_* fields to populate capture_date_start and
+    # capture_date_end.
+    #
+    # For DarwinCore export, we'll probably show a single date when capture_date_start == capture_date_end.
+
+    initial_capture_year = models.CharField(max_length=5, blank=True)
+    initial_capture_date = models.CharField(max_length=100, blank=True)
+    capture_date_start = models.DateField(null=True, blank=True, validators=[plausible_specimen_date])
+    capture_date_end = models.DateField(null=True, blank=True, validators=[plausible_specimen_date])
 
     def has_pictures(self):
         return self.specimenpicture_set.count() > 0
