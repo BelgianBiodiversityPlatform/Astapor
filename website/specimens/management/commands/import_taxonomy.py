@@ -85,6 +85,5 @@ class Command(BaseCommand):
                                                          aphia_id=row['Aphia_ID'].strip(),
                                                          authority=row['Authority'].strip())
 
-
                 self.stdout.write(self.style.SUCCESS('OK'))
 

@@ -10,15 +10,17 @@ all_genus = Taxon.genus_objects.all()
 all_species = Taxon.species_objects.all()
 all_families = Taxon.family_objects.all()
 
+
 def get_genus_with_name(name_to_match):
     return next((genus for genus in all_genus if genus.name == name_to_match), None)
+
 
 def get_species_with_name(name_to_match):
     return next((species for species in all_species if species.species_name() == name_to_match), None)
 
+
 def get_family_with_name(name_to_match):
     return next((family for family in all_families if family.name == name_to_match), None)
-
 
 
 class Command(BaseCommand):

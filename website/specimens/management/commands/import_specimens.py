@@ -117,15 +117,16 @@ class Command(BaseCommand):
 
                     specimen.depth = NumericRange(float(d_min.replace(',','.')), float(d_max.replace(',','.')), bounds='[]')
 
-                vial = row['Vial'].strip()
-                if vial:
-                    specimen.vial = vial
+                specimen.vial = row['Vial'].strip()
+                specimen.mnhn_number = row['Numero_mnhn'].strip()
+                specimen.mna_code = row['MNA_code'].strip()
+                specimen.bold_process_id = row['BOLD Process ID'].strip()
+                specimen.bold_sample_id = row['BOLD Sample ID'].strip()
+                specimen.bold_bin = row['BOLD BIN'].strip()
+                specimen.sequence_name = row['Sequence_name'].strip()
+                
+                specimen.initial_scientific_name = row['Scientific_name'].strip()
 
-                mnhn_number = row['Numero_mnhn'].strip()
-                if mnhn_number:
-                    specimen.mnhn_number = mnhn_number
-
-                specimen.initial_scientific_name = row['Scientific_name']
                 specimen.save()
                 self.stdout.write(self.style.SUCCESS('OK'))
 

@@ -57,7 +57,7 @@ class Taxon(MPTTModel):
     rank = models.ForeignKey(TaxonRank)
     status = models.ForeignKey(TaxonStatus, null=True, blank=True)
     aphia_id = models.IntegerField(null=True, blank=True)
-    authority = models.CharField(max_length=100, null=True, blank=True)
+    authority = models.CharField(max_length=100, blank=True)
 
     parent = TreeForeignKey('self', null=True, blank=True, related_name='children', db_index=True)
 
@@ -154,9 +154,14 @@ class Specimen(models.Model):
     station = models.ForeignKey(Station)
 
     # Reference of the small container for the captured animal. Unique per expedition.
-    vial = models.CharField(max_length=100, blank=True, null=True)
+    vial = models.CharField(max_length=100, blank=True)
 
-    mnhn_number = models.CharField(max_length=100, blank=True, null=True)
+    mnhn_number = models.CharField(max_length=100, blank=True)
+    mna_code = models.CharField(max_length=100, blank=True)
+    bold_process_id = models.CharField(max_length=100, blank=True)
+    bold_sample_id = models.CharField(max_length=100, blank=True)
+    bold_bin = models.CharField(max_length=100, blank=True)
+    sequence_name = models.CharField(max_length=100, blank=True)
 
     def has_pictures(self):
         return self.specimenpicture_set.count() > 0
