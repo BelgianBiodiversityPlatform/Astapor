@@ -137,7 +137,20 @@
 
             var baseMap = new ol.layer.Tile({source: source});
 
-            var vectorLayer = new ol.layer.Vector({source: vectorSource});
+            var fill = new ol.style.Fill({
+                color: 'rgba(255,0,0,0.8)'
+            });
+
+            var vectorLayer = new ol.layer.Vector({
+                source: vectorSource,
+                style: new ol.style.Style({
+                    image: new ol.style.Circle({
+                        fill: fill,
+                        radius: 8
+                    }),
+                    fill: fill,
+                })
+            });
 
             map.addLayer(baseMap);
             map.addLayer(vectorLayer);
@@ -146,11 +159,24 @@
         };
 
         // lat/lon: EPSG 4326
-        var ShowPoint = function (lat, lon) {
+        var ShowPoint = function (lat, lon, map) {
+            var reproject = function(lat, lon) {
+                return ol.proj.transform([lon, lat], 'EPSG:4326', conf.projection.code)
+            };
+
             vectorSource.clear();
-            vectorSource.addFeature(new ol.Feature({
-                    geometry: new ol.geom.Point(ol.proj.transform([lon, lat], 'EPSG:4326', conf.projection.code))
-            }));
+
+            var feature = new ol.Feature({
+                geometry: new ol.geom.Point(reproject(lat, lon))
+            });
+
+            vectorSource.addFeature(feature);
+
+            // Move the viewport if necessary
+            var mapExtent = map.getView().calculateExtent(map.getSize());
+            if (!ol.extent.containsExtent(mapExtent, feature.getGeometry().getExtent())) {
+                map.getView().setCenter(reproject(lat, lon));
+            }
         };
 
         $(function () {
@@ -167,10 +193,10 @@
             conf.mapContainerSelector.append('<div id="' + mapId + '" style="width: ' + conf.width + 'px; height: ' + conf.height + 'px";></div>');
             var map = showBaseMap(mapId);
 
-            ShowPoint(conf.latFieldSelector.val(), conf.lonFieldSelector.val());
+            ShowPoint(conf.latFieldSelector.val(), conf.lonFieldSelector.val(), map);
 
             conf.lonFieldSelector.add(conf.latFieldSelector).change(function(){
-                ShowPoint(conf.latFieldSelector.val(), conf.lonFieldSelector.val());
+                ShowPoint(conf.latFieldSelector.val(), conf.lonFieldSelector.val(), map);
             });
 
         });
