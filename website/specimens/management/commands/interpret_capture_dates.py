@@ -9,6 +9,7 @@ from specimens.models import Specimen
 def last_day_of_month(month, year):
     return calendar.monthrange(year, month)[1]
 
+
 class IncomprehensibleDateException(Exception):
     pass
 

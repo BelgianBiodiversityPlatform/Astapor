@@ -20,9 +20,8 @@ FAMILY_RANK_NAME = "Family"
 
 # TODO: move validator in different file
 def plausible_specimen_date(value):
-    year = value.year
-    if year < 2005 or value > datetime.date.today():
-        raise ValidationError(_('Specimen capture dates should be between 2005-01-01 and today'))
+    if value > datetime.date.today():
+        raise ValidationError(_('Specimen capture dates should be in the future, not the past :)'))
 
 
 class TaxonRank(models.Model):
