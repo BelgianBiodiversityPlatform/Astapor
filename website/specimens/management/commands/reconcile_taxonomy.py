@@ -66,6 +66,16 @@ class Command(BaseCommand):
                     taxon_found = True
                     self.stdout.write(self.style.SUCCESS('Case 2: FOUND EXACT SPECIES MATCH ON INITIAL SCIENTIFIC NAME'))
                     specimen.taxon = get_species_with_name(name_to_match)
+                elif 'cf ' in name_to_match and get_species_with_name(name_to_match.replace('cf ', '')):
+                    taxon_found = True
+                    self.stdout.write(self.style.SUCCESS('Case 2b: FOUND EXACT SPECIES MATCH ON INITIAL SCIENTIFIC NAME - cf'))
+                    specimen.taxon = get_species_with_name(name_to_match.replace('cf ', ''))
+                    specimen.uncertain_identification = True
+                elif 'cf. ' in name_to_match and get_species_with_name(name_to_match.replace('cf. ', '')):
+                    taxon_found = True
+                    self.stdout.write(self.style.SUCCESS('Case 2c: FOUND EXACT SPECIES MATCH ON INITIAL SCIENTIFIC NAME - cf.'))
+                    specimen.taxon = get_species_with_name(name_to_match.replace('cf. ', ''))
+                    specimen.uncertain_identification = True
                 elif name_to_match.endswith('sp') or name_to_match.endswith('sp.'):
                     # No species match, we look for a Genus
                     self.stdout.write("Case 3: Dropping 'sp'/'sp.' and looking for a genus or subgenus...", ending='')

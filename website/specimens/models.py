@@ -161,6 +161,7 @@ class Specimen(models.Model):
     specimen_id = models.IntegerField(unique=True)  # ID from the lab, not Django's PK
     initial_scientific_name = models.CharField(max_length=100)
     taxon = models.ForeignKey(Taxon, null=True, blank=True)
+    uncertain_identification = models.BooleanField(default=False)
     coords = models.PointField("Coordinates", blank=True, null=True)
     depth = FloatRangeField(blank=True, null=True, help_text="Unit: meters.")
     identified_by = models.ForeignKey(Person)

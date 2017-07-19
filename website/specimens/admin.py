@@ -55,18 +55,32 @@ class HasPicturesListFilter(HasFKListFilter):
 class SpecimenAdmin(admin.ModelAdmin):
     form = MyAdminForm
 
-    list_display = ('specimen_id', 'station', 'has_picture', 'taxon', 'initial_scientific_name', 'identified_by',
+    list_display = ('specimen_id', 'station', 'has_picture', 'taxon', 'uncertain_identification', 'initial_scientific_name', 'identified_by',
                     'specimen_location', 'depth_str', 'bioregion', 'fixation')
     list_filter = ('identified_by', 'specimen_location', 'fixation', 'station__expedition', 'bioregion',
-                   HasTaxonListFilter, HasPicturesListFilter)
+                   'uncertain_identification', HasTaxonListFilter, HasPicturesListFilter)
     search_fields = ['initial_scientific_name', 'specimen_id']
     # TODO: document searchable fields in template? (https://stackoverflow.com/questions/11411622/add-help-text-for-search-field-in-admin-py)
 
-    fields = ('specimen_id', ('taxon', 'initial_scientific_name'), 'station', 'coords', 'depth', 'identified_by',
-              'specimen_location', 'bioregion', 'fixation', 'vial', 'mnhn_number', 'mna_code', 'bold_process_id', 'bold_sample_id',
-              'bold_bin', 'sequence_name',
+    fields = ('specimen_id',
+              ('taxon', 'uncertain_identification', 'initial_scientific_name'),
+              'station',
+              'coords',
+              'depth',
+              'identified_by',
+              'specimen_location',
+              'bioregion',
+              'fixation',
+              'vial',
+              'mnhn_number',
+              'mna_code',
+              'bold_process_id',
+              'bold_sample_id',
+              'bold_bin',
+              'sequence_name',
                 ('capture_date_start', 'capture_date_end', 'initial_capture_year', 'initial_capture_date'),
               'comment')
+
     readonly_fields = ('initial_scientific_name', 'initial_capture_year', 'initial_capture_date')
 
     inlines = [
@@ -95,26 +109,32 @@ class SpecimenLocationAdmin(admin.ModelAdmin):
 class PersonAdmin(admin.ModelAdmin):
     pass
 
+
 @admin.register(Fixation)
 class FixationAdmin(admin.ModelAdmin):
     pass
+
 
 @admin.register(Station)
 class StationAdmin(admin.ModelAdmin):
     list_display = ('name', 'expedition')
     list_filter = ('expedition', )
 
+
 @admin.register(Expedition)
 class ExpeditionAdmin(admin.ModelAdmin):
     pass
+
 
 @admin.register(SpecimenPicture)
 class SpecimenPictureAdmin(admin.ModelAdmin):
     fields = ('specimen', 'image', 'high_interest')
 
+
 @admin.register(Taxon)
 class TaxonAdmin(DraggableMPTTAdmin):
     pass
+
 
 @admin.register(Bioregion)
 class BioreginAdmin(admin.ModelAdmin):
