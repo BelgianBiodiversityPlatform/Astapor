@@ -107,6 +107,13 @@ class Taxon(MPTTModel):
         order_insertion_by = ['name']
 
 
+class Bioregion(models.Model):
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
+
+
 class Person(models.Model):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
@@ -171,6 +178,7 @@ class Specimen(models.Model):
     bold_sample_id = models.CharField(max_length=100, blank=True)
     bold_bin = models.CharField(max_length=100, blank=True)
     sequence_name = models.CharField(max_length=100, blank=True)
+    bioregion = models.ForeignKey(Bioregion, null=True, blank=True)
 
     # Date management:
     # In initial data, we have messy and sometimes imprecise dates in two fields (date and year)

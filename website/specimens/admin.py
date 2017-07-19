@@ -4,7 +4,7 @@ from django import forms
 
 from mptt.admin import DraggableMPTTAdmin
 
-from .models import Specimen, SpecimenLocation, Person, Fixation, Station, Expedition, SpecimenPicture, Taxon
+from .models import Specimen, SpecimenLocation, Person, Fixation, Station, Expedition, SpecimenPicture, Taxon, Bioregion
 from .widgets import LatLongWidget
 
 
@@ -56,14 +56,14 @@ class SpecimenAdmin(admin.ModelAdmin):
     form = MyAdminForm
 
     list_display = ('specimen_id', 'station', 'has_picture', 'taxon', 'initial_scientific_name', 'identified_by',
-                    'specimen_location', 'depth_str', 'fixation')
-    list_filter = ('identified_by', 'specimen_location', 'fixation', 'station__expedition', HasTaxonListFilter,
-                   HasPicturesListFilter)
+                    'specimen_location', 'depth_str', 'bioregion', 'fixation')
+    list_filter = ('identified_by', 'specimen_location', 'fixation', 'station__expedition', 'bioregion',
+                   HasTaxonListFilter, HasPicturesListFilter)
     search_fields = ['initial_scientific_name', 'specimen_id']
     # TODO: document searchable fields in template? (https://stackoverflow.com/questions/11411622/add-help-text-for-search-field-in-admin-py)
 
     fields = ('specimen_id', ('taxon', 'initial_scientific_name'), 'station', 'coords', 'depth', 'identified_by',
-              'specimen_location', 'fixation', 'vial', 'mnhn_number', 'mna_code', 'bold_process_id', 'bold_sample_id',
+              'specimen_location', 'bioregion', 'fixation', 'vial', 'mnhn_number', 'mna_code', 'bold_process_id', 'bold_sample_id',
               'bold_bin', 'sequence_name',
                 ('capture_date_start', 'capture_date_end', 'initial_capture_year', 'initial_capture_date'),
               'comment')
@@ -114,6 +114,10 @@ class SpecimenPictureAdmin(admin.ModelAdmin):
 
 @admin.register(Taxon)
 class TaxonAdmin(DraggableMPTTAdmin):
+    pass
+
+@admin.register(Bioregion)
+class BioreginAdmin(admin.ModelAdmin):
     pass
 
 admin.site.site_header = 'Astapor administration'

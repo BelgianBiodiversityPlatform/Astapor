@@ -6,7 +6,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.management.base import BaseCommand, CommandError
 from django.contrib.gis.geos import Point
 
-from specimens.models import Person, SpecimenLocation, Specimen, Fixation, Expedition, Station, UNKNOWN_STATION_NAME
+from specimens.models import (Person, SpecimenLocation, Specimen, Fixation, Expedition, Station, Bioregion,
+                              UNKNOWN_STATION_NAME)
 
 MODELS_TO_TRUNCATE = [Station, Expedition, Fixation, Person, SpecimenLocation, Specimen]
 
@@ -114,6 +115,13 @@ class Command(BaseCommand):
                         d_min = d_max = depth
 
                     specimen.depth = NumericRange(float(d_min.replace(',','.')), float(d_max.replace(',','.')), bounds='[]')
+
+                bioregion = row['Region'].strip()
+                if bioregion:
+                    specimen.bioregion, created = Bioregion.objects.get_or_create(name=bioregion)
+                    if created:
+                        self.stdout.write(
+                            self.style.SUCCESS('Created new Bioregion: {0}...'.format(specimen.bioregion)),ending='')
 
                 specimen.vial = row['Vial'].strip()
                 specimen.mnhn_number = row['Numero_mnhn'].strip()
