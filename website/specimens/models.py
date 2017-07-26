@@ -147,9 +147,17 @@ class Expedition(models.Model):
         return self.name
 
 
+class Gear(models.Model):
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.name
+
 class Station(models.Model):
     name = models.CharField(max_length=100)
     expedition = models.ForeignKey(Expedition)
+
+    gear = models.ForeignKey(Gear, blank=True, null=True)
     # It may be interesting to add a location (point, polygon or line) for the station itself, but for now we keep the
     # coordinates as a specimen attribute (when sampling we generally try to set the lat/lon for the specimen as precisely
     # as possible, sometimes more than the station)

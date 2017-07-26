@@ -4,7 +4,8 @@ from django import forms
 
 from mptt.admin import DraggableMPTTAdmin
 
-from .models import Specimen, SpecimenLocation, Person, Fixation, Station, Expedition, SpecimenPicture, Taxon, Bioregion
+from .models import (Specimen, SpecimenLocation, Person, Fixation, Station, Expedition, SpecimenPicture, Taxon,
+                     Bioregion, Gear)
 from .widgets import LatLongWidget
 
 
@@ -99,6 +100,12 @@ class SpecimenAdmin(admin.ModelAdmin):
 
         js = ("https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.3.3/proj4.js",
               "https://cdnjs.cloudflare.com/ajax/libs/ol3/3.15.1/ol.js")
+
+
+@admin.register(Gear)
+class GearAdmin(admin.ModelAdmin):
+    pass
+
 
 @admin.register(SpecimenLocation)
 class SpecimenLocationAdmin(admin.ModelAdmin):
