@@ -1,4 +1,4 @@
-Django==1.11.2
+Django==1.11.5
 django-export-action==0.1.1
 django-mptt==0.8.7
 et-xmlfile==1.0.1
