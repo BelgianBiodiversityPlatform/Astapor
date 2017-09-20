@@ -11,13 +11,14 @@ from specimens.models import (Person, SpecimenLocation, Specimen, Fixation, Expe
 
 MODELS_TO_TRUNCATE = [Gear, Station, Expedition, Fixation, Person, SpecimenLocation, Specimen]
 
-# TODO: document use of this script:
-# - Column name is important, not column order
-# - Lat/lon use comma as a separator
-
 
 class Command(BaseCommand):
     help = 'Import specimens from a CSV file'
+
+    def __init__(self, *args, **kwargs):
+        super(Command, self).__init__(*args, **kwargs)
+
+        self.w = self.stdout.write  # Alias to save keystrokes :)
 
     def add_arguments(self, parser):
         parser.add_argument('csv_file')
@@ -31,11 +32,11 @@ class Command(BaseCommand):
         )
 
     def get_or_create_station_gear_and_expedition(self,
-                                             station_name,
-                                             expedition_name,
-                                             coords,
-                                             depth,
-                                             gear):
+                                                  station_name,
+                                                  expedition_name,
+                                                  coords,
+                                                  depth,
+                                                  gear):
         # Returns a Station object, ready to assign to Specimen.station
         """
 
@@ -57,32 +58,25 @@ class Command(BaseCommand):
         except ObjectDoesNotExist:  # New station, let's create it (with expedition if needed):
             expedition, created = Expedition.objects.get_or_create(name=expedition_name)
             if created:
-                self.stdout.write(self.style.SUCCESS('Just created a new expedition: {0}...'.format(expedition)), ending='')
+                self.w(self.style.SUCCESS('\n\tCreated new Expedition: {0}'.format(expedition)), ending='')
 
-            r = Station.objects.possible_inconsistent_duplicate(name=station_name,
-                                                                expedition=expedition,
-                                                                coords=coords,
-                                                                depth=depth,
-                                                                gear=g)
-            if r:
-                self.stdout.write(self.style.WARNING('Possible inconsistent duplicate for station:'))
-                self.stdout.write(self.style.WARNING('Previous: {0}'.format(r)))
-                self.stdout.write(self.style.WARNING('New: name => {name}, '
-                                                     'expedition => {expedition}, '
-                                                     'coords => {coords}, '
-                                                     'depth => {depth}, '
-                                                     'gear => {gear}').format(name=station_name,
-                                                                                   expedition=expedition,
-                                                                                   coords=coords,
-                                                                                   depth=depth,
-                                                                                   gear=g))
+            possible_duplicate = Station.objects.possible_inconsistent_duplicate(name=station_name,
+                                                                                 expedition=expedition,
+                                                                                 coords=coords,
+                                                                                 depth=depth,
+                                                                                 gear=g)
 
             station = Station.objects.create(name=station_name,
                                              expedition=expedition,
                                              coords=coords,
                                              depth=depth,
                                              gear=g)
-            self.stdout.write(self.style.SUCCESS('Created new station: {0}...'.format(station)), ending='')
+            self.w(self.style.SUCCESS('\n\tCreated new Station: {0}'.format(station)), ending="")
+
+            if possible_duplicate:
+                self.w(self.style.WARNING('\n\t!! Possible inconsistent duplicate for station:'), ending='')
+                self.w(self.style.WARNING('\n\tPrevious entry: {0}'.format(possible_duplicate)), ending='')
+                self.w(self.style.WARNING('\n\tNew entry: {0}'.format(station)), ending='')
 
             return station
 
@@ -112,26 +106,22 @@ class Command(BaseCommand):
 
             return NumericRange(float(d_min.replace(',', '.')), float(d_max.replace(',', '.')), bounds='[]')
 
-
     def handle(self, *args, **options):
-        self.stdout.write('Importing data from file...')
+        self.w('Importing data from file...')
         with open(options['csv_file']) as csv_file:
             if options['truncate']:
                 for model in MODELS_TO_TRUNCATE:
-                    self.stdout.write('Truncate model {name} '.format(name=model.__name__), ending='')
+                    self.w('Truncate model {name}...'.format(name=model.__name__), ending='')
                     model.objects.all().delete()
-                    self.stdout.write(self.style.SUCCESS('OK'))
+                    self.w(self.style.SUCCESS('Done.'))
 
             for i, row in enumerate(csv.DictReader(csv_file, delimiter=',')):
-                self.stdout.write('Processing row #{i}...'.format(i=i), ending='')
-
                 specimen = Specimen()
                 specimen.specimen_id = row['Specimen_id'].strip()
 
-                self.stdout.write('Specimen ID is {id}...'.format(id=specimen.specimen_id), ending='')
+                self.w('Processing row #{i} with ID {id}'.format(i=i, id=specimen.specimen_id), ending='')
 
                 point = self.raw_lat_lon_to_point(row['Latitude'], row['Longitude'])
-
 
                 # TODO: add gear when found
                 specimen.station = self.get_or_create_station_gear_and_expedition(row['Station'].strip(),
@@ -145,15 +135,14 @@ class Command(BaseCommand):
                 id_first_name, id_last_name = identified_by.split()
                 identifier, created = Person.objects.get_or_create(first_name=id_first_name, last_name=id_last_name)
                 if created:
-                    self.stdout.write(self.style.SUCCESS('Created new person: {0}...'.format(identifier)), ending='')
+                    self.w(self.style.SUCCESS('\n\tCreated new Person: {0}'.format(identifier)), ending='')
 
                 specimen.identified_by = identifier
 
                 # Specimen locations
                 specimen_location, created = SpecimenLocation.objects.get_or_create(name=row['Specimen_location'])
                 if created:
-                    self.stdout.write(self.style.SUCCESS('Created new Specimen Location: {0}...'.format(specimen_location)),
-                                      ending='')
+                    self.w(self.style.SUCCESS('\n\tCreated new Specimen Location: {0}'.format(specimen_location)), ending='')
 
                 specimen.specimen_location = specimen_location
 
@@ -162,17 +151,15 @@ class Command(BaseCommand):
                 if fixation:
                     specimen.fixation, created = Fixation.objects.get_or_create(name=fixation)
                     if created:
-                        self.stdout.write(
-                            self.style.SUCCESS('Created new Fixation: {0}...'.format(specimen.fixation)),ending='')
-
-
+                        self.w(
+                            self.style.SUCCESS('\n\tCreated new Fixation: {0}'.format(specimen.fixation)), ending='')
 
                 bioregion = row['Region'].strip()
                 if bioregion:
                     specimen.bioregion, created = Bioregion.objects.get_or_create(name=bioregion)
                     if created:
-                        self.stdout.write(
-                            self.style.SUCCESS('Created new Bioregion: {0}...'.format(specimen.bioregion)),ending='')
+                        self.w(
+                            self.style.SUCCESS('\n\tCreated new Bioregion: {0}'.format(specimen.bioregion)), ending='')
 
                 specimen.vial = row['Vial Size'].strip()
                 specimen.mnhn_number = row['Numero_mnhn'].strip()
@@ -191,13 +178,4 @@ class Command(BaseCommand):
                 specimen.comment = row['Comment'].strip()
 
                 specimen.save()
-                self.stdout.write(self.style.SUCCESS('OK'))
-
-
-
-
-
-
-
-
-
+                self.w(self.style.SUCCESS('\n\t => Specimen created.'))

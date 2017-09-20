@@ -42,7 +42,6 @@ class Command(BaseCommand):
         else:
             raise IncomprehensibleDateException()
 
-
     def handle(self, *args, **options):
         self.stdout.write('Interpret and set specimen capture dates...')
 
