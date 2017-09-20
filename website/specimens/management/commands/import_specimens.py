@@ -3,22 +3,19 @@ import csv
 from psycopg2.extras import NumericRange
 
 from django.core.exceptions import ObjectDoesNotExist
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import CommandError
 from django.contrib.gis.geos import Point
 
 from specimens.models import (Person, SpecimenLocation, Specimen, Fixation, Expedition, Station, Bioregion,
                               Gear, UNKNOWN_STATION_NAME)
 
+from ._utils import AstaporCommand
+
 MODELS_TO_TRUNCATE = [Gear, Station, Expedition, Fixation, Person, SpecimenLocation, Specimen]
 
 
-class Command(BaseCommand):
+class Command(AstaporCommand):
     help = 'Import specimens from a CSV file'
-
-    def __init__(self, *args, **kwargs):
-        super(Command, self).__init__(*args, **kwargs)
-
-        self.w = self.stdout.write  # Alias to save keystrokes :)
 
     def add_arguments(self, parser):
         parser.add_argument('csv_file')

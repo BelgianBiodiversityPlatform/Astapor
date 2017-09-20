@@ -1,6 +1,6 @@
 import csv
 
-from django.core.management.base import BaseCommand
+from ._utils import AstaporCommand
 
 from specimens.models import TaxonRank, Taxon, TaxonStatus, SPECIES_RANK_NAME, SUBGENUS_RANK_NAME
 
@@ -20,7 +20,7 @@ def create_initial_ranks():
     ])
 
 
-class Command(BaseCommand):
+class Command(AstaporCommand):
     help = 'Import taxonomy from a CSV file.'
 
     def add_arguments(self, parser):
@@ -35,20 +35,20 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        self.stdout.write('Importing data from file...')
+        self.w('Importing data from file...')
 
         with open(options['csv_file']) as csv_file:
             if options['truncate']:
                 for model in MODELS_TO_TRUNCATE:
-                    self.stdout.write('Truncate model {name} ...'.format(name=model.__name__), ending='')
+                    self.w('Truncate model {name} ...'.format(name=model.__name__), ending='')
                     model.objects.all().delete()
-                    self.stdout.write(self.style.SUCCESS('OK'))
+                    self.w(self.style.SUCCESS('OK'))
 
-            self.stdout.write('Creating initial ranks...')
+            self.w('Creating initial ranks...')
             create_initial_ranks()
 
             for i, row in enumerate(csv.DictReader(csv_file, delimiter=',')):
-                self.stdout.write('Processing row #{i}...'.format(i=i), ending='')
+                self.w('Processing row #{i}...'.format(i=i), ending='')
 
                 species_status, _ = TaxonStatus.objects.get_or_create(name=row['Status'])
 
@@ -85,5 +85,5 @@ class Command(BaseCommand):
                                                          aphia_id=row['Aphia_ID'].strip(),
                                                          authority=row['Authority'].strip())
 
-                self.stdout.write(self.style.SUCCESS('OK'))
+                self.w(self.style.SUCCESS('OK'))
 
