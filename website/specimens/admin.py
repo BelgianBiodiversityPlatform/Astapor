@@ -13,7 +13,7 @@ from .widgets import LatLongWidget
 class MyAdminForm(forms.ModelForm):
 
     class Meta:
-        model = Specimen
+        model = Station
         fields = "__all__"
         widgets = {
             'coords': LatLongWidget
@@ -54,10 +54,8 @@ class HasPicturesListFilter(HasFKListFilter):
 
 @admin.register(Specimen)
 class SpecimenAdmin(admin.ModelAdmin):
-    form = MyAdminForm
-
     list_display = ('specimen_id', 'station', 'has_picture', 'taxon', 'uncertain_identification', 'initial_scientific_name', 'identified_by',
-                    'specimen_location', 'depth_str', 'bioregion', 'fixation')
+                    'specimen_location', 'bioregion', 'fixation')
     list_filter = ('identified_by', 'specimen_location', 'fixation', 'station__expedition', 'bioregion',
                    'uncertain_identification', HasTaxonListFilter, HasPicturesListFilter)
     search_fields = ['initial_scientific_name', 'specimen_id']
@@ -66,8 +64,6 @@ class SpecimenAdmin(admin.ModelAdmin):
     fields = ('specimen_id',
               ('taxon', 'uncertain_identification', 'initial_scientific_name'),
               'station',
-              'coords',
-              'depth',
               'identified_by',
               'specimen_location',
               'bioregion',
@@ -124,7 +120,9 @@ class FixationAdmin(admin.ModelAdmin):
 
 @admin.register(Station)
 class StationAdmin(admin.ModelAdmin):
-    list_display = ('name', 'expedition')
+    form = MyAdminForm
+
+    list_display = ('name', 'expedition', 'coords', 'depth')
     list_filter = ('expedition', )
 
 

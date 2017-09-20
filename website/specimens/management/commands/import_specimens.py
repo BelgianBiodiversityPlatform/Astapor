@@ -7,9 +7,9 @@ from django.core.management.base import BaseCommand, CommandError
 from django.contrib.gis.geos import Point
 
 from specimens.models import (Person, SpecimenLocation, Specimen, Fixation, Expedition, Station, Bioregion,
-                              UNKNOWN_STATION_NAME)
+                              Gear, UNKNOWN_STATION_NAME)
 
-MODELS_TO_TRUNCATE = [Station, Expedition, Fixation, Person, SpecimenLocation, Specimen]
+MODELS_TO_TRUNCATE = [Gear, Station, Expedition, Fixation, Person, SpecimenLocation, Specimen]
 
 # TODO: document use of this script:
 # - Column name is important, not column order
@@ -30,27 +30,88 @@ class Command(BaseCommand):
             help='Truncate specimens (and related) tables prior to import',
         )
 
-    def get_or_create_station_and_expedition(self, station_name, expedition_name):
+    def get_or_create_station_gear_and_expedition(self,
+                                             station_name,
+                                             expedition_name,
+                                             coords,
+                                             depth,
+                                             gear):
         # Returns a Station object, ready to assign to Specimen.station
         """
 
         :rtype: Station
         """
+
         if station_name == '':
             station_name = UNKNOWN_STATION_NAME
 
-        try:  # A station already exists for the correct expedition?
-            return Station.objects.get(name=station_name, expedition__name=expedition_name)
+        g, _ = Gear.objects.get_or_create(name=gear)
+
+        try:  # A station that match the characteristics already exists
+            return Station.objects.get(name=station_name,
+                                       expedition__name=expedition_name,
+                                       coords=coords,
+                                       depth=depth,
+                                       gear=g)
 
         except ObjectDoesNotExist:  # New station, let's create it (with expedition if needed):
             expedition, created = Expedition.objects.get_or_create(name=expedition_name)
             if created:
-                self.stdout.write(self.style.SUCCESS('Created new expedition: {0}...'.format(expedition)), ending='')
+                self.stdout.write(self.style.SUCCESS('Just created a new expedition: {0}...'.format(expedition)), ending='')
 
-            station = Station.objects.create(name=station_name, expedition=expedition)
+            r = Station.objects.possible_inconsistent_duplicate(name=station_name,
+                                                                expedition=expedition,
+                                                                coords=coords,
+                                                                depth=depth,
+                                                                gear=g)
+            if r:
+                self.stdout.write(self.style.WARNING('Possible inconsistent duplicate for station:'))
+                self.stdout.write(self.style.WARNING('Previous: {0}'.format(r)))
+                self.stdout.write(self.style.WARNING('New: name => {name}, '
+                                                     'expedition => {expedition}, '
+                                                     'coords => {coords}, '
+                                                     'depth => {depth}, '
+                                                     'gear => {gear}').format(name=station_name,
+                                                                                   expedition=expedition,
+                                                                                   coords=coords,
+                                                                                   depth=depth,
+                                                                                   gear=g))
+
+            station = Station.objects.create(name=station_name,
+                                             expedition=expedition,
+                                             coords=coords,
+                                             depth=depth,
+                                             gear=g)
             self.stdout.write(self.style.SUCCESS('Created new station: {0}...'.format(station)), ending='')
 
             return station
+
+    @staticmethod
+    def raw_lat_lon_to_point(raw_lat, raw_lon):
+        # Decimal separator: ','
+        # Raise CommandError if inconsistency
+
+        raw_lat = raw_lat.strip()
+        raw_lon = raw_lon.strip()
+
+        if raw_lat and raw_lon:
+            lat = float(raw_lat.replace(',', '.'))
+            lon = float(raw_lon.replace(',', '.'))
+            return Point(lon, lat)
+        elif raw_lat or raw_lon:
+            raise CommandError('Either latitude or longitude is missing!')
+
+    @staticmethod
+    def raw_depth_to_numericrange(raw_depth):
+        depth = raw_depth.strip()
+        if depth:
+            if '-' in depth:  # It's a range
+                d_min, d_max = depth.split('-')
+            else:  # Single value
+                d_min = d_max = depth
+
+            return NumericRange(float(d_min.replace(',', '.')), float(d_max.replace(',', '.')), bounds='[]')
+
 
     def handle(self, *args, **options):
         self.stdout.write('Importing data from file...')
@@ -63,13 +124,21 @@ class Command(BaseCommand):
 
             for i, row in enumerate(csv.DictReader(csv_file, delimiter=',')):
                 self.stdout.write('Processing row #{i}...'.format(i=i), ending='')
-                specimen = Specimen()
 
+                specimen = Specimen()
                 specimen.specimen_id = row['Specimen_id'].strip()
 
                 self.stdout.write('Specimen ID is {id}...'.format(id=specimen.specimen_id), ending='')
-                specimen.station = self.get_or_create_station_and_expedition(row['Station'].strip(),
-                                                                             row['Expedition'].strip())
+
+                point = self.raw_lat_lon_to_point(row['Latitude'], row['Longitude'])
+
+
+                # TODO: add gear when found
+                specimen.station = self.get_or_create_station_gear_and_expedition(row['Station'].strip(),
+                                                                             row['Expedition'].strip(),
+                                                                             coords = point,
+                                                                             depth=self.raw_depth_to_numericrange(row['Depth']),
+                                                                             gear='')
 
                 # Identifiers
                 identified_by = row['Identified_by'].strip()
@@ -88,17 +157,6 @@ class Command(BaseCommand):
 
                 specimen.specimen_location = specimen_location
 
-                # Coordinates
-                latitude = row['Latitude'].strip()
-                longitude = row['Longitude'].strip()
-                if latitude and longitude:
-                    lat = float(row['Latitude'].replace(',','.'))
-                    lon = float(row['Longitude'].replace(',','.'))
-                    specimen.coords = Point(lon, lat)
-                else:
-                    if latitude or longitude:
-                        raise CommandError('Either latitude or longitude is missing!')
-
                 # Fixation
                 fixation = row['Fixation'].strip()
                 if fixation:
@@ -107,14 +165,7 @@ class Command(BaseCommand):
                         self.stdout.write(
                             self.style.SUCCESS('Created new Fixation: {0}...'.format(specimen.fixation)),ending='')
 
-                depth = row['Depth'].strip()
-                if depth:
-                    if '-' in depth: # It's a range
-                        d_min, d_max = depth.split('-')
-                    else:  # Single value
-                        d_min = d_max = depth
 
-                    specimen.depth = NumericRange(float(d_min.replace(',','.')), float(d_max.replace(',','.')), bounds='[]')
 
                 bioregion = row['Region'].strip()
                 if bioregion:
@@ -123,7 +174,7 @@ class Command(BaseCommand):
                         self.stdout.write(
                             self.style.SUCCESS('Created new Bioregion: {0}...'.format(specimen.bioregion)),ending='')
 
-                specimen.vial = row['Vial'].strip()
+                specimen.vial = row['Vial Size'].strip()
                 specimen.mnhn_number = row['Numero_mnhn'].strip()
                 specimen.mna_code = row['MNA_code'].strip()
                 specimen.bold_process_id = row['BOLD Process ID'].strip()

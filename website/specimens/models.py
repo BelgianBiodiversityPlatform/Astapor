@@ -153,16 +153,53 @@ class Gear(models.Model):
     def __str__(self):
         return self.name
 
+
+class StationManager(models.Manager):
+    def possible_inconsistent_duplicate(self, name, expedition, coords, depth, gear):
+        """If a similar (but not identical) station already exists, return it.
+
+        Returns false in other cases (for example if perfectly equal, or if nothing similar exists)
+        """
+
+        if self.filter(name=name, expedition=expedition).count() == 1:
+            try:
+                self.get(name=name, expedition=expedition, coords=coords, depth=depth, gear=gear)
+                return False   # It's identical
+            except ObjectDoesNotExist:
+                return self.get(name=name, expedition=expedition)
+        else:
+            return False  # nothing similar exists
+
+
 class Station(models.Model):
     name = models.CharField(max_length=100)
     expedition = models.ForeignKey(Expedition)
 
+    coords = models.PointField("Coordinates", blank=True, null=True)
+    depth = FloatRangeField(blank=True, null=True, help_text="Unit: meters.")
+
     gear = models.ForeignKey(Gear, blank=True, null=True)
-    # It may be interesting to add a location (point, polygon or line) for the station itself, but for now we keep the
-    # coordinates as a specimen attribute (when sampling we generally try to set the lat/lon for the specimen as precisely
-    # as possible, sometimes more than the station)
+
+    objects = StationManager()
+
     def __str__(self):
-        return "{name} (from exp. {exp_name})".format(name=self.name, exp_name=self.expedition)
+        return "{name} (from exp. {exp_name}) Coords={coords} Depth={depth} Gear={gear}".format(name=self.name,
+                                                                                                exp_name=self.expedition,
+                                                                                                coords=self.coords,
+                                                                                                depth=self.depth,
+                                                                                                gear=self.gear)
+
+    def depth_str(self):
+        if self.depth:
+            if self.depth.lower == self.depth.upper: # Single value
+                str = "{depth}m.".format(depth=self.depth.lower)
+            else:  # Real range
+                str = '{min_depth}-{max_depth}m.'.format(min_depth=self.depth.lower, max_depth=self.depth.upper)
+        else:  # No data
+            str = '-'
+
+        return str
+    depth_str.short_description = 'Depth'
 
 
 class Specimen(models.Model):
@@ -170,8 +207,6 @@ class Specimen(models.Model):
     initial_scientific_name = models.CharField(max_length=100)
     taxon = models.ForeignKey(Taxon, null=True, blank=True)
     uncertain_identification = models.BooleanField(default=False)
-    coords = models.PointField("Coordinates", blank=True, null=True)
-    depth = FloatRangeField(blank=True, null=True, help_text="Unit: meters.")
     identified_by = models.ForeignKey(Person)
     specimen_location = models.ForeignKey(SpecimenLocation)
     fixation = models.ForeignKey(Fixation, blank=True, null=True)
@@ -208,18 +243,6 @@ class Specimen(models.Model):
 
     def has_pictures(self):
         return self.specimenpicture_set.count() > 0
-
-    def depth_str(self):
-        if self.depth:
-            if self.depth.lower == self.depth.upper: # Single value
-                str = "{depth}m.".format(depth=self.depth.lower)
-            else:  # Real range
-                str = '{min_depth}-{max_depth}m.'.format(min_depth=self.depth.lower, max_depth=self.depth.upper)
-        else:  # No data
-            str = '-'
-
-        return str
-    depth_str.short_description = 'Depth'
 
     def clean(self):
         is_new = self.pk is None
