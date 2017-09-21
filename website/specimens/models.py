@@ -21,7 +21,7 @@ FAMILY_RANK_NAME = "Family"
 # TODO: move validator in different file
 def plausible_specimen_date(value):
     if value > datetime.date.today():
-        raise ValidationError(_('Specimen capture dates should be in the future, not the past :)'))
+        raise ValidationError(_('Specimen capture dates should be in the past, not the future :)'))
 
 
 class TaxonRank(models.Model):

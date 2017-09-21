@@ -55,9 +55,9 @@ class Command(AstaporCommand):
         for specimen in Specimen.objects.all():
             if options['set_all'] or (not specimen.capture_date_start and not specimen.capture_date_end):
                 i = i + 1
-                self.w('Specimen {s} (initial year: {year} - initial date: {d})...'.format(s=specimen,
-                                                                                                      year=specimen.initial_capture_year,
-                                                                                                      d=specimen.initial_capture_date))
+                self.w('Specimen w/ ID={s} (initial year: {year} - initial date: {d})...'.format(s=specimen.specimen_id,
+                                                                                                 year=specimen.initial_capture_year,
+                                                                                                 d=specimen.initial_capture_date))
 
                 solved = False
                 # no date, no year
