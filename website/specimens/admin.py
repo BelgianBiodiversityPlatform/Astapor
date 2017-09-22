@@ -54,8 +54,8 @@ class HasPicturesListFilter(HasFKListFilter):
 
 @admin.register(Specimen)
 class SpecimenAdmin(admin.ModelAdmin):
-    list_display = ('specimen_id', 'station', 'has_picture', 'taxon', 'uncertain_identification', 'initial_scientific_name', 'identified_by',
-                    'specimen_location', 'bioregion', 'fixation')
+    list_display = ('specimen_id', 'station', 'has_picture', 'initial_scientific_name', 'taxon',
+                    'uncertain_identification', 'identified_by', 'specimen_location', 'vial', 'bioregion', 'fixation')
     list_filter = ('identified_by', 'specimen_location', 'fixation', 'station__expedition', 'bioregion',
                    'uncertain_identification', 'ulb_box', HasTaxonListFilter, HasPicturesListFilter)
     search_fields = ['initial_scientific_name', 'specimen_id']
