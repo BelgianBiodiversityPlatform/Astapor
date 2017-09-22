@@ -221,6 +221,9 @@ class Specimen(models.Model):
     # Reference of the small container for the captured animal. Unique per expedition.
     vial = models.CharField(max_length=100, blank=True)
 
+    ulb_box = models.CharField(max_length=100, blank=True)
+    vial_size = models.CharField(max_length=100, blank=True) # As text for now, we'll see later
+
     mnhn_number = models.CharField(max_length=100, blank=True)
     mna_code = models.CharField(max_length=100, blank=True)
     bold_process_id = models.CharField(max_length=100, blank=True)

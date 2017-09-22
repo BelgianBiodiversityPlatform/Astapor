@@ -153,7 +153,7 @@ class Command(AstaporCommand):
                         self.w(
                             self.style.SUCCESS('\n\tCreated new Bioregion: {0}'.format(specimen.bioregion)), ending='')
 
-                specimen.vial = row['Vial Size'].strip()
+                specimen.vial = row['Vial_nb'].strip()
                 specimen.mnhn_number = row['Numero_mnhn'].strip()
                 specimen.mna_code = row['MNA_code'].strip()
                 specimen.bold_process_id = row['BOLD Process ID'].strip()
@@ -166,6 +166,9 @@ class Command(AstaporCommand):
                 specimen.initial_capture_date = row['Date'].strip()
 
                 specimen.initial_scientific_name = row['Scientific_name'].strip()
+
+                specimen.ulb_box = row['ULB BOX'].strip()
+                specimen.vial_size = row['Vial Size'].strip()
 
                 specimen.comment = row['Comment'].strip()
 
