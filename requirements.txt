@@ -1,3 +1,4 @@
+dateparser==0.6.0
 Django==1.11.5
 django-export-action==0.1.1
 django-mptt==0.8.7
@@ -7,5 +8,9 @@ olefile==0.44
 openpyxl==2.4.8
 Pillow==4.1.1
 psycopg2==2.7.1
+python-dateutil==2.6.1
 pytz==2017.2
+regex==2017.7.28
+ruamel.yaml==0.15.34
 six==1.10.0
+tzlocal==1.4

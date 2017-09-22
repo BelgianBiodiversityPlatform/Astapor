@@ -28,12 +28,7 @@ class Command(AstaporCommand):
             help='Truncate specimens (and related) tables prior to import',
         )
 
-    def get_or_create_station_gear_and_expedition(self,
-                                                  station_name,
-                                                  expedition_name,
-                                                  coords,
-                                                  depth,
-                                                  gear):
+    def get_or_create_station_gear_and_expedition(self, station_name, expedition_name, coordinates, depth, gear):
         # Returns a Station object, ready to assign to Specimen.station
         """
 
@@ -48,7 +43,7 @@ class Command(AstaporCommand):
         try:  # A station that match the characteristics already exists
             return Station.objects.get(name=station_name,
                                        expedition__name=expedition_name,
-                                       coords=coords,
+                                       coordinates=coordinates,
                                        depth=depth,
                                        gear=g)
 
@@ -59,13 +54,13 @@ class Command(AstaporCommand):
 
             possible_duplicate = Station.objects.possible_inconsistent_duplicate(name=station_name,
                                                                                  expedition=expedition,
-                                                                                 coords=coords,
+                                                                                 coordinates=coordinates,
                                                                                  depth=depth,
                                                                                  gear=g)
 
             station = Station.objects.create(name=station_name,
                                              expedition=expedition,
-                                             coords=coords,
+                                             coordinates=coordinates,
                                              depth=depth,
                                              gear=g)
             self.w(self.style.SUCCESS('\n\tCreated new Station: {0}'.format(station)), ending="")
@@ -123,7 +118,7 @@ class Command(AstaporCommand):
                 # TODO: add gear when found
                 specimen.station = self.get_or_create_station_gear_and_expedition(row['Station'].strip(),
                                                                              row['Expedition'].strip(),
-                                                                             coords = point,
+                                                                             coordinates = point,
                                                                              depth=self.raw_depth_to_numericrange(row['Depth']),
                                                                              gear='')
 

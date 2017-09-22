@@ -1,10 +1,13 @@
 import datetime
 import calendar
 
+import dateparser
 from django.core.management.base import CommandError
 
 from specimens.models import Specimen
 from ._utils import AstaporCommand
+
+FIRST_SAFE_DATE = datetime.date(2000, 1, 1)
 
 def last_day_of_month(month, year):
     return calendar.monthrange(year, month)[1]
@@ -31,14 +34,23 @@ class Command(AstaporCommand):
         """ Returns y, m, d (ints). d is None if we only know the month"""
 
         if d.count('-') == 2:
-            self.w("Date assumed to be in (D)D-(M)M-YY format...")
+            self.w("\tDate assumed to be in (D)D-(M)M-YY format")
             d, m, y = d.split("-")
-            return int("20{y}".format(y=y)), int(m), int(d)
+
+            if int(y) > 17:
+                year = int(y) + 1900
+            else:
+                year = int(y) + 2000
+
+            return year, int(m), int(d)
         elif d.count('-') == 1:
             y, m = d.split("-")
-            self.w("Date assumed to be in YYYY-MM format...")
+            self.w("\tDate assumed to be in YYYY-MM format")
             return int(y), int(m), None
-
+        elif dateparser.parse(d):  # Maybe it's something like '31 January 2016'
+            self.w(self.style.WARNING("\tParsing as localized date"))
+            dt = dateparser.parse(d)
+            return dt.year, dt.month, dt.day
         else:
             raise IncomprehensibleDateException()
 
@@ -62,13 +74,13 @@ class Command(AstaporCommand):
                 solved = False
                 # no date, no year
                 if not specimen.initial_capture_year and not specimen.initial_capture_date:
-                    self.w(self.style.SUCCESS("No initial data, skipping."))
+                    self.w(self.style.SUCCESS("\tNo initial data, skipping."))
                     solved = True
                 # no date but year
                 elif specimen.initial_capture_year and not specimen.initial_capture_date:
                     specimen.capture_date_start = datetime.date(int(specimen.initial_capture_year), 1, 1)
                     specimen.capture_date_end = datetime.date(int(specimen.initial_capture_year), 12, 31)
-                    self.w(self.style.SUCCESS("We only have a year..."))
+                    self.w("\tWe " + self.style.SUCCESS("only have a year") + ", range = whole year")
                     solved = True
                 # 'date' filled, but not 'year'
                 elif not specimen.initial_capture_year and specimen.initial_capture_date:
@@ -86,7 +98,7 @@ class Command(AstaporCommand):
                     y, m, d = self.extract_date(specimen.initial_capture_date)
 
                     if y != int(specimen.initial_capture_year):
-                        raise CommandError("Inconsistency detected between year and date")
+                        raise CommandError("Inconsistency detected between year and date.")
                     else:
                         if d:  # we got a specific date
                             specimen.capture_date_start = datetime.date(y, m, d)
@@ -101,13 +113,18 @@ class Command(AstaporCommand):
                     solved_cases = solved_cases + 1
                     specimen.save()
 
-                    self.w('Values set: capture_date_start:{start} - capture_date_end:{end}'.format(
+                    self.w(self.style.SUCCESS('\tValues set: capture_date_start:{start} - capture_date_end:{end}'.format(
                         start=specimen.capture_date_start,
-                        end=specimen.capture_date_end))
+                        end=specimen.capture_date_end)))
+
+                    if specimen.capture_date_start and specimen.capture_date_end:  # Non applicable if no date
+                        if specimen.capture_date_start < FIRST_SAFE_DATE or specimen.capture_date_end < FIRST_SAFE_DATE:
+                            self.w(self.style.WARNING('\t!! Interpreted date before {first_safe_date}, please check').format(
+                                first_safe_date=FIRST_SAFE_DATE))
 
         self.w("End: solved {solved}/{total} cases ({pc} percent).".format(solved=solved_cases,
-                                                                                      total=i,
-                                                                                      pc=str(float(solved_cases) / i * 100)))
+                                                                           total=i,
+                                                                           pc=str(float(solved_cases) / i * 100)))
 
 
 

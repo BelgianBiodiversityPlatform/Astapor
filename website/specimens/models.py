@@ -61,6 +61,7 @@ class TaxonManager(models.Manager):
         except ObjectDoesNotExist:
             return None
 
+
 class Taxon(MPTTModel):
     name = models.CharField(max_length=100)
     rank = models.ForeignKey(TaxonRank)
@@ -155,7 +156,7 @@ class Gear(models.Model):
 
 
 class StationManager(models.Manager):
-    def possible_inconsistent_duplicate(self, name, expedition, coords, depth, gear):
+    def possible_inconsistent_duplicate(self, name, expedition, coordinates, depth, gear):
         """If a similar (but not identical) station already exists, return it.
 
         Returns false in other cases (for example if perfectly equal, or if nothing similar exists)
@@ -163,7 +164,7 @@ class StationManager(models.Manager):
 
         if self.filter(name=name, expedition=expedition).count() == 1:
             try:
-                self.get(name=name, expedition=expedition, coords=coords, depth=depth, gear=gear)
+                self.get(name=name, expedition=expedition, coordinates=coordinates, depth=depth, gear=gear)
                 return False   # It's identical
             except ObjectDoesNotExist:
                 return self.get(name=name, expedition=expedition)
@@ -175,7 +176,7 @@ class Station(models.Model):
     name = models.CharField(max_length=100)
     expedition = models.ForeignKey(Expedition)
 
-    coords = models.PointField("Coordinates", blank=True, null=True)
+    coordinates = models.PointField(blank=True, null=True)
     depth = FloatRangeField(blank=True, null=True, help_text="Unit: meters.")
 
     gear = models.ForeignKey(Gear, blank=True, null=True)
@@ -183,11 +184,12 @@ class Station(models.Model):
     objects = StationManager()
 
     def __str__(self):
-        return "{name} (from exp. {exp_name}) Coords={coords} Depth={depth} Gear={gear}".format(name=self.name,
-                                                                                                exp_name=self.expedition,
-                                                                                                coords=self.coords,
-                                                                                                depth=self.depth,
-                                                                                                gear=self.gear)
+        return "{name} (from exp. {exp_name}) Point={coordinates} Depth={depth} Gear={gear}".format(
+            name=self.name,
+            exp_name=self.expedition,
+            coordinates=self.coordinates,
+            depth=self.depth,
+            gear=self.gear)
 
     def depth_str(self):
         if self.depth:

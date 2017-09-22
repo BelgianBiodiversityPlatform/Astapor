@@ -16,7 +16,7 @@ class MyAdminForm(forms.ModelForm):
         model = Station
         fields = "__all__"
         widgets = {
-            'coords': LatLongWidget
+            "coordinates": LatLongWidget
         }
 
 
@@ -122,7 +122,7 @@ class FixationAdmin(admin.ModelAdmin):
 class StationAdmin(admin.ModelAdmin):
     form = MyAdminForm
 
-    list_display = ('name', 'expedition', 'coords', 'depth')
+    list_display = ('name', 'expedition', 'coordinates', 'depth')
     list_filter = ('expedition', )
 
 
