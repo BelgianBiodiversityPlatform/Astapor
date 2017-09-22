@@ -184,6 +184,9 @@ class Station(models.Model):
     objects = StationManager()
 
     def __str__(self):
+        return self.name
+
+    def long_str(self):
         return "{name} (from exp. {exp_name}) Point={coordinates} Depth={depth} Gear={gear}".format(
             name=self.name,
             exp_name=self.expedition,

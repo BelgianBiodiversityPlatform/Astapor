@@ -63,12 +63,12 @@ class Command(AstaporCommand):
                                              coordinates=coordinates,
                                              depth=depth,
                                              gear=g)
-            self.w(self.style.SUCCESS('\n\tCreated new Station: {0}'.format(station)), ending="")
+            self.w(self.style.SUCCESS('\n\tCreated new Station: {0}'.format(station.long_str())), ending="")
 
             if possible_duplicate:
                 self.w(self.style.WARNING('\n\t!! Possible inconsistent duplicate for station:'), ending='')
-                self.w(self.style.WARNING('\n\tPrevious entry: {0}'.format(possible_duplicate)), ending='')
-                self.w(self.style.WARNING('\n\tNew entry: {0}'.format(station)), ending='')
+                self.w(self.style.WARNING('\n\tPrevious entry: {0}'.format(possible_duplicate.long_str())), ending='')
+                self.w(self.style.WARNING('\n\tNew entry: {0}'.format(station.long_str())), ending='')
 
             return station
 
