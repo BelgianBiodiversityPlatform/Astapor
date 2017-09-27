@@ -109,5 +109,6 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 DISABLE_VIAL_UNIQUENESS_VALIDATION = False
+DISABLE_MNHN_UNIQUENESS_VALIDATION = False
 
 from .settings_local import *

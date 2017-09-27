@@ -281,6 +281,11 @@ class Specimen(models.Model):
                 if the_obj.pk != self.pk:
                     raise ValidationError("Vial should be unique for a given expedition")
 
+        if self.mnhn_number and not settings.DISABLE_MNHN_UNIQUENESS_VALIDATION:  # Unique, but only if not null
+            if Specimen.objects.filter(mnhn_number=self.mnhn_number).count() > 0:
+                raise ValidationError("Mnhn number must be unique (if not null)")
+
+
     def save(self, *args, **kwargs):
         self.full_clean()  # We want our custom clean method to be called at save()
         return super(Specimen, self).save(*args, **kwargs)
