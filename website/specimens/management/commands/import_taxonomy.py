@@ -1,6 +1,8 @@
 import csv
 
-from ._utils import AstaporCommand
+from django.conf import settings
+
+from ._utils import AstaporCommand, validate_number_cols
 
 from specimens.models import TaxonRank, Taxon, TaxonStatus, SPECIES_RANK_NAME, SUBGENUS_RANK_NAME
 
@@ -48,6 +50,8 @@ class Command(AstaporCommand):
             create_initial_ranks()
 
             for i, row in enumerate(csv.DictReader(csv_file, delimiter=',')):
+                validate_number_cols(row, settings.EXPECTED_NUMBER_COLS_SCIENTIFICNAMES)
+
                 self.w('Processing row #{i}...'.format(i=i), ending='')
 
                 species_status, _ = TaxonStatus.objects.get_or_create(name=row['Status'])

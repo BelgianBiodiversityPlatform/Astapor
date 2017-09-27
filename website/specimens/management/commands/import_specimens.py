@@ -9,10 +9,12 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.management.base import CommandError
 from django.contrib.gis.geos import Point
 
+from django.conf import settings
+
 from specimens.models import (Person, SpecimenLocation, Specimen, Fixation, Expedition, Station, Bioregion,
                               Gear, UNKNOWN_STATION_NAME)
 
-from ._utils import AstaporCommand
+from ._utils import AstaporCommand, validate_number_cols
 
 MODELS_TO_TRUNCATE = [Gear, Station, Expedition, Fixation, Person, SpecimenLocation, Specimen]
 
@@ -214,6 +216,8 @@ class Command(AstaporCommand):
                     self.w(self.style.SUCCESS('Done.'))
 
             for i, row in enumerate(csv.DictReader(csv_file, delimiter=',')):
+                validate_number_cols(row, settings.EXPECTED_NUMBER_COLS_SPECIMEN)
+
                 specimen = Specimen()
                 specimen.specimen_id = row['Specimen_id'].strip()
 

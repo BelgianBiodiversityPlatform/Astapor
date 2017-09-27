@@ -111,4 +111,8 @@ STATIC_URL = '/static/'
 DISABLE_VIAL_UNIQUENESS_VALIDATION = False
 DISABLE_MNHN_UNIQUENESS_VALIDATION = False
 
+# Beware: only columns which have a title are counted, make sure they all have
+EXPECTED_NUMBER_COLS_SPECIMEN = 30
+EXPECTED_NUMBER_COLS_SCIENTIFICNAMES = 12
+
 from .settings_local import *
