@@ -20,6 +20,3 @@ class Command(AstaporCommand):
         self.w('3. Reconcile taxonomy')
         management.call_command('reconcile_taxonomy', '--all')
 
-        self.w('4. Interpret capture dates')
-        management.call_command('interpret_capture_dates', '--all')
-

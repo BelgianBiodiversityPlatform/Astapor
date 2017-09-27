@@ -75,11 +75,10 @@ class SpecimenAdmin(admin.ModelAdmin):
               'bold_sample_id',
               'bold_bin',
               'sequence_name',
-                ('capture_date_start', 'capture_date_end', 'initial_capture_year', 'initial_capture_date'),
               'ulb_box',
               'comment')
 
-    readonly_fields = ('initial_scientific_name', 'initial_capture_year', 'initial_capture_date')
+    readonly_fields = ('initial_scientific_name', )
 
     inlines = [
         SpecimenPictureInline,
@@ -123,8 +122,18 @@ class FixationAdmin(admin.ModelAdmin):
 class StationAdmin(admin.ModelAdmin):
     form = MyAdminForm
 
-    list_display = ('name', 'expedition', 'coordinates', 'depth')
+    list_display = ('name', 'expedition', 'coordinates_str', 'depth_str')
     list_filter = ('expedition', )
+
+    fields = ('name',
+              'expedition',
+              ('capture_date_start', 'capture_date_end', 'initial_capture_year', 'initial_capture_date'),
+              'coordinates',
+              'depth',
+              'gear'
+    )
+
+    readonly_fields = ('initial_capture_year', 'initial_capture_date')
 
 
 @admin.register(Expedition)

@@ -156,7 +156,8 @@ class Gear(models.Model):
 
 
 class StationManager(models.Manager):
-    def possible_inconsistent_duplicate(self, name, expedition, coordinates, depth, gear):
+    def possible_inconsistent_duplicate(self, name, expedition, coordinates, depth, gear, capture_date_start,
+                                        capture_date_end):
         """If a similar (but not identical) station already exists, return it.
 
         Returns false in other cases (for example if perfectly equal, or if nothing similar exists)
@@ -164,7 +165,8 @@ class StationManager(models.Manager):
 
         if self.filter(name=name, expedition=expedition).count() == 1:
             try:
-                self.get(name=name, expedition=expedition, coordinates=coordinates, depth=depth, gear=gear)
+                self.get(name=name, expedition=expedition, coordinates=coordinates, depth=depth, gear=gear,
+                         capture_date_start=capture_date_start, capture_date_end=capture_date_end)
                 return False   # It's identical
             except ObjectDoesNotExist:
                 return self.get(name=name, expedition=expedition)
@@ -175,6 +177,22 @@ class StationManager(models.Manager):
 class Station(models.Model):
     name = models.CharField(max_length=100)
     expedition = models.ForeignKey(Expedition)
+
+    # Date management:
+    # In initial data, we have messy and sometimes imprecise dates in two fields (date and year)
+    # - Those two are imported in the raw initial_date and initial_year fields (read-only so they can't be changed after
+    # import)
+    # For 'real app use', we use the capture_date_start and capture_date_end date fields (avoided Postgres native
+    # daterange type, since it always returns [,) intervals.
+    #
+    # At import, we try to figure out the messy things in raw_* fields to populate capture_date_start and
+    # capture_date_end.
+    #
+    # For DarwinCore export, we'll probably show a single date when capture_date_start == capture_date_end.
+    initial_capture_year = models.CharField(max_length=5, blank=True)
+    initial_capture_date = models.CharField(max_length=100, blank=True)
+    capture_date_start = models.DateField(null=True, blank=True, validators=[plausible_specimen_date])
+    capture_date_end = models.DateField(null=True, blank=True, validators=[plausible_specimen_date])
 
     coordinates = models.PointField(blank=True, null=True)
     depth = FloatRangeField(blank=True, null=True, help_text="Unit: meters.")
@@ -187,12 +205,17 @@ class Station(models.Model):
         return "{station_name} ({expedition_name})".format(station_name=self.name, expedition_name=self.expedition.name)
 
     def long_str(self):
-        return "{name} (from exp. {exp_name}) Point={coordinates} Depth={depth} Gear={gear}".format(
+        return "{name} (from exp. {exp_name}) Point={coordinates} Depth={depth} Gear={gear} Initial year={i_year} Initial date={i_date} start_date={s_date} end_date={e_date}".format(
             name=self.name,
             exp_name=self.expedition,
-            coordinates=self.coordinates,
-            depth=self.depth,
-            gear=self.gear)
+            coordinates=self.coordinates_str(),
+            depth=self.depth_str(),
+            gear=self.gear,
+            i_year=self.initial_capture_year,
+            i_date=self.initial_capture_date,
+            s_date=self.capture_date_start,
+            e_date=self.capture_date_end
+            )
 
     def depth_str(self):
         if self.depth:
@@ -204,7 +227,16 @@ class Station(models.Model):
             str = '-'
 
         return str
+
     depth_str.short_description = 'Depth'
+
+    def coordinates_str(self):
+        if self.coordinates:
+            return "{lat}, {lon}".format(lat=self.coordinates.y, lon=self.coordinates.x)
+
+        return '-'
+
+    coordinates_str.short_description = 'Coordinates'
 
 
 class Specimen(models.Model):
@@ -231,23 +263,6 @@ class Specimen(models.Model):
     bold_bin = models.CharField(max_length=100, blank=True)
     sequence_name = models.CharField(max_length=100, blank=True)
     bioregion = models.ForeignKey(Bioregion, null=True, blank=True)
-
-    # Date management:
-    # In initial data, we have messy and sometimes imprecise dates in two fields (date and year)
-    # - Those two are imported in the raw initial_date and initial_year fields (read-only so they can't be changed after
-    # import)
-    # For 'real app use', we use the capture_date_start and capture_date_end date fields (avoided Postgres native
-    # daterange type, since it always returns [,) intervals.
-    #
-    # At import, we try to figure out the messy things in raw_* fields to populate capture_date_start and
-    # capture_date_end.
-    #
-    # For DarwinCore export, we'll probably show a single date when capture_date_start == capture_date_end.
-
-    initial_capture_year = models.CharField(max_length=5, blank=True)
-    initial_capture_date = models.CharField(max_length=100, blank=True)
-    capture_date_start = models.DateField(null=True, blank=True, validators=[plausible_specimen_date])
-    capture_date_end = models.DateField(null=True, blank=True, validators=[plausible_specimen_date])
 
     def has_pictures(self):
         return self.specimenpicture_set.count() > 0

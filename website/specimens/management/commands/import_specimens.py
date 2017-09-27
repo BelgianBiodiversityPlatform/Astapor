@@ -1,5 +1,8 @@
 import csv
 
+import calendar
+import datetime
+import dateparser
 from psycopg2.extras import NumericRange
 
 from django.core.exceptions import ObjectDoesNotExist
@@ -12,6 +15,14 @@ from specimens.models import (Person, SpecimenLocation, Specimen, Fixation, Expe
 from ._utils import AstaporCommand
 
 MODELS_TO_TRUNCATE = [Gear, Station, Expedition, Fixation, Person, SpecimenLocation, Specimen]
+
+
+def last_day_of_month(month, year):
+    return calendar.monthrange(year, month)[1]
+
+
+class IncomprehensibleDateException(Exception):
+    pass
 
 
 class Command(AstaporCommand):
@@ -28,7 +39,91 @@ class Command(AstaporCommand):
             help='Truncate specimens (and related) tables prior to import',
         )
 
-    def get_or_create_station_gear_and_expedition(self, station_name, expedition_name, coordinates, depth, gear):
+    def interpret_capture_date(self, d):
+        """ Returns y, m, d (ints). d is None if we only know the month"""
+
+        if d.count('-') == 2:
+            self.w("\tDate assumed to be in (D)D-(M)M-YY format")
+            d, m, y = d.split("-")
+
+            if int(y) > 17:
+                year = int(y) + 1900
+            else:
+                year = int(y) + 2000
+
+            return year, int(m), int(d)
+        elif d.count('-') == 1:
+            y, m = d.split("-")
+            self.w("\tDate assumed to be in YYYY-MM format")
+            return int(y), int(m), None
+        elif dateparser.parse(d):  # Maybe it's something like '31 January 2016'
+            self.w(self.style.WARNING("\tParsing as localized date"))
+            dt = dateparser.parse(d)
+            return dt.year, dt.month, dt.day
+        else:
+            raise IncomprehensibleDateException()
+
+    def interpret_dates_and_year(self, initial_capture_year, initial_capture_date):
+        """Return a tuple of dates to represent a date range: (date_start, date_end)
+
+        Returns (None, None) if no dates have been found.
+        """
+        self.w('\n\tInitial year: {year} - initial date: {d})...'.format(year=initial_capture_year,
+                                                                     d=initial_capture_date))
+
+        solved = False
+
+        # no date, no year
+        if not initial_capture_year and not initial_capture_date:
+            self.w(self.style.SUCCESS("\tNo initial data, skipping."))
+            solved = True
+            capture_date_start = None
+            capture_date_end = None
+        # no date but year
+        elif initial_capture_year and not initial_capture_date:
+            capture_date_start = datetime.date(int(initial_capture_year), 1, 1)
+            capture_date_end = datetime.date(int(initial_capture_year), 12, 31)
+            self.w("\tWe " + self.style.SUCCESS("only have a year") + ", range = whole year")
+            solved = True
+
+        # 'date' filled, but not 'year'
+        elif not initial_capture_year and initial_capture_date:
+            y, m, d = self.interpret_capture_date(initial_capture_date)
+            if d:  # we got a specific date
+                capture_date_start = datetime.date(y, m, d)
+                capture_date_end = datetime.date(y, m, d)
+            else:  # we only know the month
+                capture_date_start = datetime.date(y, m, 1)
+                capture_date_end = datetime.date(y, m, last_day_of_month(m, y))
+            solved = True
+        # both are filled...
+        else:
+            # ... we can therefore do a consistency check
+            y, m, d = self.interpret_capture_date(initial_capture_date)
+
+            if y != int(initial_capture_year):
+                raise CommandError("Inconsistency detected between year and date.")
+            else:
+                if d:  # we got a specific date
+                    capture_date_start = datetime.date(y, m, d)
+                    capture_date_end = datetime.date(y, m, d)
+                else:  # we only got a month
+                    capture_date_start = datetime.date(y, m, 1)
+                    capture_date_end = datetime.date(y, m, last_day_of_month(m, y))
+
+            solved = True
+
+        if solved:
+            self.w(self.style.SUCCESS('\tValues found: capture_date_start:{start} - capture_date_end:{end}'.format(
+                start=capture_date_start,
+                end=capture_date_end)))
+
+            return capture_date_start, capture_date_end
+        else:
+            raise CommandError("Date cannot be understood...")
+
+    def get_or_create_station_gear_and_expedition(self, station_name, expedition_name, coordinates, depth, gear,
+                                                  initial_year, initial_date):
         # Returns a Station object, ready to assign to Specimen.station
         """
 
@@ -40,12 +135,16 @@ class Command(AstaporCommand):
 
         g, _ = Gear.objects.get_or_create(name=gear)
 
+        capture_date_start, capture_date_end = self.interpret_dates_and_year(initial_year, initial_date)
+
         try:  # A station that match the characteristics already exists
             return Station.objects.get(name=station_name,
                                        expedition__name=expedition_name,
                                        coordinates=coordinates,
                                        depth=depth,
-                                       gear=g)
+                                       gear=g,
+                                       capture_date_start=capture_date_start,
+                                       capture_date_end=capture_date_end)
 
         except ObjectDoesNotExist:  # New station, let's create it (with expedition if needed):
             expedition, created = Expedition.objects.get_or_create(name=expedition_name)
@@ -56,13 +155,20 @@ class Command(AstaporCommand):
                                                                                  expedition=expedition,
                                                                                  coordinates=coordinates,
                                                                                  depth=depth,
-                                                                                 gear=g)
+                                                                                 gear=g,
+                                                                                 capture_date_start=capture_date_start,
+                                                                                 capture_date_end=capture_date_end)
 
             station = Station.objects.create(name=station_name,
                                              expedition=expedition,
                                              coordinates=coordinates,
                                              depth=depth,
-                                             gear=g)
+                                             gear=g,
+                                             initial_capture_year=initial_year,
+                                             initial_capture_date=initial_date,
+                                             capture_date_start=capture_date_start,
+                                             capture_date_end=capture_date_end
+                                             )
             self.w(self.style.SUCCESS('\n\tCreated new Station: {0}'.format(station.long_str())), ending="")
 
             if possible_duplicate:
@@ -115,12 +221,19 @@ class Command(AstaporCommand):
 
                 point = self.raw_lat_lon_to_point(row['Latitude'], row['Longitude'])
 
+                # Load raw/messy/imprecise dates:
+                initial_year = row['Year'].strip()
+                initial_date = row['Date'].strip()
+
                 # TODO: add gear when found
                 specimen.station = self.get_or_create_station_gear_and_expedition(row['Station'].strip(),
                                                                              row['Expedition'].strip(),
                                                                              coordinates = point,
                                                                              depth=self.raw_depth_to_numericrange(row['Depth']),
-                                                                             gear='')
+                                                                             gear='',
+                                                                             initial_year=initial_year,
+                                                                             initial_date=initial_date
+                                                                            )
 
                 # Identifiers
                 identified_by = row['Identified_by'].strip()
@@ -160,10 +273,6 @@ class Command(AstaporCommand):
                 specimen.bold_sample_id = row['BOLD Sample ID'].strip()
                 specimen.bold_bin = row['BOLD BIN'].strip()
                 specimen.sequence_name = row['Sequence_name'].strip()
-
-                # Load raw/messy/imprecise dates:
-                specimen.initial_capture_year = row['Year'].strip()
-                specimen.initial_capture_date = row['Date'].strip()
 
                 specimen.initial_scientific_name = row['Scientific_name'].strip()
 

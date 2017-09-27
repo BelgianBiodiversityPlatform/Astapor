@@ -24,7 +24,7 @@ class LatLongWidget(widgets.MultiWidget):
 
     def decompress(self, value):
         if value:
-            return tuple(value.coordinates)
+            return tuple(value.coords)
         return (None, None)
 
     def value_from_datadict(self, data, files, name):
