@@ -4,7 +4,6 @@
 
 {% block admin_change_form_document_ready %}
     {{ block.super }}
-
     <script type="text/javascript">
         var $ = django.jQuery;
 
@@ -12,88 +11,18 @@
 
         var conf = {
             // Map
-            mapContainerSelector: $('.field-coords div:first-child'),
-            lonFieldSelector: $('#id_coords_0'),
-            latFieldSelector: $('#id_coords_1'),
+            mapContainerSelector: $('.field-coordinates div:first-child'),
+            lonFieldSelector: $('#id_coordinates_0'),
+            latFieldSelector: $('#id_coordinates_1'),
             width: 800, // pixels
             height: 600, // pixels
             imageryDate: '2017-01-16',
             projection: {
                 code: 'EPSG:3031',
                 def: "+proj=stere +lat_0=-90 +lat_ts=-71 +lon_0=0 +k=1 +x_0=0 +y_0=0 " +
-                     "+datum=WGS84 +units=m +no_defs",
+                "+datum=WGS84 +units=m +no_defs",
                 validityExtent: [-4194304, -4194304, 4194304, 4194304]
-            },
-
-            // Scientific name suggestion
-            snsuggest_container_selector: $('.field-scientific_name div:first-child'),
-            sn_value_selector: $("#id_scientific_name"),
-
-            icon_success: '{% static "admin/img/icon-yes.svg" %}',
-            icon_warning: '{% static "admin/img/icon-alert.svg" %}',
-            icon_error: '{% static "admin/img/icon-no.svg" %}'
-        };
-
-        var exactMatchAction = function (r) {
-            var res = '<img src="' + conf.icon_success + ' " /> ';
-            res += 'Ok, exact species name found at GBIF ';
-            res += 'with a confidence score of <strong>' + r.confidence + '</strong>';
-
-            return res;
-        };
-
-        var fuzzyMatchAction = function (r) {
-            var res = '<img src="' + conf.icon_warning + ' " /> ';
-            res += 'Fuzzy match at GBIF ';
-
-            res += '(' + '<strong><i>' + r.canonicalName + '</i></strong>' + ' confidence: ' + r.confidence + ')';
-
-            return res;
-        };
-
-        var higherrankAction = function (r) {
-            var res = '<img src="' + conf.icon_warning + ' " /> ';
-            res += 'Higher taxon found at GBIF ';
-            res += '(' + r.rank + ': ' + r.canonicalName + ')';
-
-            return res;
-        };
-
-        var noneAction = function (r) {
-            var res = '<img src="' + conf.icon_error + ' " /> ';
-            res += ':( Species unknown at GBIF ';
-
-            return res;
-        };
-
-        var GBIFSpeciesMatch = function () {
-            $('#results').empty();
-
-            var params = {
-                rank: 'species',
-                name: conf.sn_value_selector.val()
-            };
-
-            $.getJSON('http://api.gbif.org/v1/species/match', params, function (r) {
-                var res;
-
-                switch (r.matchType) {
-                    case "EXACT":
-                        res = exactMatchAction(r);
-                        break;
-                    case "FUZZY":
-                        res = fuzzyMatchAction(r);
-                        break;
-                    case "HIGHERRANK":
-                        res = higherrankAction(r);
-                        break;
-                    case "NONE":
-                        res = noneAction(r);
-                        break;
-                }
-
-                $('#results').html(res);
-            })
+            }
         };
 
         var showBaseMap = function (mapId) {
@@ -180,14 +109,7 @@
         };
 
         $(function () {
-            // 1. Scientific name match
-            conf.snsuggest_container_selector.append('<div id="results"></div>');
-            // Call on page load...
-            GBIFSpeciesMatch();
-            // ... And when value change
-            conf.sn_value_selector.on('input', GBIFSpeciesMatch);
-
-            // 2. OL map
+            // OL map
             var mapId = "map";
 
             conf.mapContainerSelector.append('<div id="' + mapId + '" style="width: ' + conf.width + 'px; height: ' + conf.height + 'px";></div>');
@@ -201,5 +123,4 @@
 
         });
     </script>
-
 {% endblock %}

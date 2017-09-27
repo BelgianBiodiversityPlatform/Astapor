@@ -89,14 +89,6 @@ class SpecimenAdmin(admin.ModelAdmin):
     has_picture.short_description = 'Has pictures?'
     has_picture.boolean = True
 
-    class Media:
-        css = {
-             "all": ("https://cdnjs.cloudflare.com/ajax/libs/ol3/3.15.1/ol.css",)
-        }
-
-        js = ("https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.3.3/proj4.js",
-              "https://cdnjs.cloudflare.com/ajax/libs/ol3/3.15.1/ol.js")
-
 
 @admin.register(Gear)
 class GearAdmin(admin.ModelAdmin):
@@ -134,6 +126,14 @@ class StationAdmin(admin.ModelAdmin):
     )
 
     readonly_fields = ('initial_capture_year', 'initial_capture_date')
+
+    class Media:
+        css = {
+             "all": ("https://cdnjs.cloudflare.com/ajax/libs/ol3/3.15.1/ol.css",)
+        }
+
+        js = ("https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.3.3/proj4.js",
+              "https://cdnjs.cloudflare.com/ajax/libs/ol3/3.15.1/ol.js")
 
 
 @admin.register(Expedition)
