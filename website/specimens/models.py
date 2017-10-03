@@ -204,6 +204,17 @@ class Station(models.Model):
     def __str__(self):
         return "{station_name} ({expedition_name})".format(station_name=self.name, expedition_name=self.expedition.name)
 
+    def clean(self):
+        if ((self.capture_date_start and not self.capture_date_end) or
+                (not self.capture_date_start and self.capture_date_end)):
+
+            raise ValidationError("Both capture dates (or none) should be set!")
+
+        if ((self.capture_date_start and self.capture_date_end) and
+                (self.capture_date_end < self.capture_date_start)):
+            raise ValidationError("Start date should be earlier than end date!")
+
+
     def long_str(self):
         return "{name} (from exp. {exp_name}) Point={coordinates} Depth={depth} Gear={gear} Initial year={i_year} Initial date={i_date} start_date={s_date} end_date={e_date}".format(
             name=self.name,
