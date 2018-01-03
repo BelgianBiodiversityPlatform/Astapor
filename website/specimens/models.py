@@ -64,12 +64,13 @@ class TaxonManager(models.Manager):
 
 class Taxon(MPTTModel):
     name = models.CharField(max_length=100)
-    rank = models.ForeignKey(TaxonRank)
-    status = models.ForeignKey(TaxonStatus, null=True, blank=True)
+    rank = models.ForeignKey(TaxonRank, on_delete=models.CASCADE)
+    status = models.ForeignKey(TaxonStatus, on_delete=models.CASCADE, null=True, blank=True)
     aphia_id = models.IntegerField(null=True, blank=True)
     authority = models.CharField(max_length=100, blank=True)
 
-    parent = TreeForeignKey('self', null=True, blank=True, related_name='children', db_index=True)
+    parent = TreeForeignKey('self', null=True, blank=True, related_name='children', db_index=True,
+                            on_delete=models.CASCADE)
 
     objects = TaxonManager()
 
@@ -176,7 +177,7 @@ class StationManager(models.Manager):
 
 class Station(models.Model):
     name = models.CharField(max_length=100)
-    expedition = models.ForeignKey(Expedition)
+    expedition = models.ForeignKey(Expedition, on_delete=models.CASCADE)
 
     # Date management:
     # In initial data, we have messy and sometimes imprecise dates in two fields (date and year)
@@ -197,7 +198,7 @@ class Station(models.Model):
     coordinates = models.PointField(blank=True, null=True)
     depth = FloatRangeField(blank=True, null=True, help_text="Unit: meters.")
 
-    gear = models.ForeignKey(Gear, blank=True, null=True)
+    gear = models.ForeignKey(Gear, blank=True, null=True, on_delete=models.CASCADE)
 
     objects = StationManager()
 
@@ -253,13 +254,13 @@ class Station(models.Model):
 class Specimen(models.Model):
     specimen_id = models.IntegerField(unique=True)  # ID from the lab, not Django's PK
     initial_scientific_name = models.CharField(max_length=100)
-    taxon = models.ForeignKey(Taxon, null=True, blank=True)
+    taxon = models.ForeignKey(Taxon, null=True, blank=True, on_delete=models.CASCADE)
     uncertain_identification = models.BooleanField(default=False)
-    identified_by = models.ForeignKey(Person)
-    specimen_location = models.ForeignKey(SpecimenLocation)
-    fixation = models.ForeignKey(Fixation, blank=True, null=True)
+    identified_by = models.ForeignKey(Person, on_delete=models.CASCADE)
+    specimen_location = models.ForeignKey(SpecimenLocation, on_delete=models.CASCADE)
+    fixation = models.ForeignKey(Fixation, blank=True, null=True, on_delete=models.CASCADE)
     comment = models.TextField(blank=True, null=True)
-    station = models.ForeignKey(Station)
+    station = models.ForeignKey(Station, on_delete=models.CASCADE)
 
     # Reference of the small container for the captured animal. Unique per expedition.
     vial = models.CharField(max_length=100, blank=True)
@@ -273,7 +274,7 @@ class Specimen(models.Model):
     bold_sample_id = models.CharField(max_length=100, blank=True)
     bold_bin = models.CharField(max_length=100, blank=True)
     sequence_name = models.CharField(max_length=100, blank=True)
-    bioregion = models.ForeignKey(Bioregion, null=True, blank=True)
+    bioregion = models.ForeignKey(Bioregion, null=True, blank=True, on_delete=models.CASCADE)
 
     def has_pictures(self):
         return self.specimenpicture_set.count() > 0
@@ -311,6 +312,6 @@ class Specimen(models.Model):
 class SpecimenPicture(models.Model):
     image = models.ImageField(upload_to='specimen_pictures')
     high_interest = models.BooleanField("High resolution/species representative")
-    specimen = models.ForeignKey(Specimen)
+    specimen = models.ForeignKey(Specimen, on_delete=models.CASCADE)
 
 

@@ -21,5 +21,5 @@ from django.conf import settings
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
-    url(r'^export_action/', include("export_action.urls", namespace="export_action")),
+    url(r'^export_action/', include(("export_action.urls", "export_action"), "export_action")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
