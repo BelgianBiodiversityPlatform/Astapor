@@ -52,6 +52,12 @@ class HasPicturesListFilter(HasFKListFilter):
     title = _('Has pictures')
 
 
+class HasGearListFilter(HasFKListFilter):
+    parameter_name = 'has_gear'
+    fk_field_name = 'gear'
+    title = _('Has gear')
+
+
 @admin.register(Specimen)
 class SpecimenAdmin(admin.ModelAdmin):
     list_display = ('specimen_id', 'station', 'has_picture', 'initial_scientific_name', 'taxon',
@@ -115,7 +121,7 @@ class StationAdmin(admin.ModelAdmin):
     form = MyAdminForm
 
     list_display = ('name', 'expedition', 'coordinates_str', 'depth_str')
-    list_filter = ('expedition', )
+    list_filter = ('expedition', HasGearListFilter)
 
     fields = ('name',
               'expedition',
