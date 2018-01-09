@@ -124,18 +124,18 @@ class Command(AstaporCommand):
         else:
             raise CommandError("Date cannot be understood...")
 
-    def get_or_create_station_gear_and_expedition(self, station_name, expedition_name, coordinates, depth, gear,
-                                                  initial_year, initial_date):
+    def get_or_create_station_and_expedition(self, station_name, expedition_name, coordinates, depth,
+                                             initial_year, initial_date):
         # Returns a Station object, ready to assign to Specimen.station
         """
 
         :rtype: Station
         """
 
+        gear = None  # We'll import them later (info by Camille, January 9th)
+
         if station_name == '':
             station_name = UNKNOWN_STATION_NAME
-
-        g, _ = Gear.objects.get_or_create(name=gear)
 
         capture_date_start, capture_date_end = self.interpret_dates_and_year(initial_year, initial_date)
 
@@ -144,7 +144,7 @@ class Command(AstaporCommand):
                                        expedition__name=expedition_name,
                                        coordinates=coordinates,
                                        depth=depth,
-                                       gear=g,
+                                       gear=gear,
                                        capture_date_start=capture_date_start,
                                        capture_date_end=capture_date_end)
 
@@ -157,7 +157,7 @@ class Command(AstaporCommand):
                                                                                  expedition=expedition,
                                                                                  coordinates=coordinates,
                                                                                  depth=depth,
-                                                                                 gear=g,
+                                                                                 gear=gear,
                                                                                  capture_date_start=capture_date_start,
                                                                                  capture_date_end=capture_date_end)
 
@@ -165,7 +165,7 @@ class Command(AstaporCommand):
                                              expedition=expedition,
                                              coordinates=coordinates,
                                              depth=depth,
-                                             gear=g,
+                                             gear=gear,
                                              initial_capture_year=initial_year,
                                              initial_capture_date=initial_date,
                                              capture_date_start=capture_date_start,
@@ -215,6 +215,8 @@ class Command(AstaporCommand):
                     model.objects.all().delete()
                     self.w(self.style.SUCCESS('Done.'))
 
+            self.w('Gears will be added later, ignored for now...')
+
             for i, row in enumerate(csv.DictReader(csv_file, delimiter=',')):
                 validate_number_cols(row, settings.EXPECTED_NUMBER_COLS_SPECIMEN)
 
@@ -229,15 +231,12 @@ class Command(AstaporCommand):
                 initial_year = row['Year'].strip()
                 initial_date = row['Date'].strip()
 
-                # TODO: add gear when found
-                specimen.station = self.get_or_create_station_gear_and_expedition(row['Station'].strip(),
+                specimen.station = self.get_or_create_station_and_expedition(row['Station'].strip(),
                                                                              row['Expedition'].strip(),
                                                                              coordinates = point,
                                                                              depth=self.raw_depth_to_numericrange(row['Depth']),
-                                                                             gear='',
                                                                              initial_year=initial_year,
-                                                                             initial_date=initial_date
-                                                                            )
+                                                                             initial_date=initial_date)
 
                 # Identifiers
                 identified_by = row['Identified_by'].strip()
@@ -276,7 +275,10 @@ class Command(AstaporCommand):
                 specimen.bold_process_id = row['BOLD Process ID'].strip()
                 specimen.bold_sample_id = row['BOLD Sample ID'].strip()
                 specimen.bold_bin = row['BOLD BIN'].strip()
-                specimen.sequence_name = row['Sequence_name'].strip()
+
+                # sequences will be loaded later
+                # specimen.sequence_name = row['Sequence_name'].strip()
+                self.w('Sequence will be added later, ignored for now...')
 
                 specimen.initial_scientific_name = row['Scientific_name'].strip()
 
@@ -287,3 +289,14 @@ class Command(AstaporCommand):
 
                 specimen.save()
                 self.w(self.style.SUCCESS('\n\t => Specimen created.'))
+
+                # creer champ isotope
+                # ajout champ FASTA
+                # blast interne (sequence entrée à la main, et recherche dans les specimens)
+                # virer ULBbox, plus de sens
+                # sequence name (plus tard, désactiver import)
+
+                # TODO: tester création gear
+                # TODO: selecteur de date marche pas dans l'édition d'une station ?
+                # TODO: Vérifier que le 5004 à bien le 5 oct 2017 comme date
+                # Admin station: filtrer par missing Gear?

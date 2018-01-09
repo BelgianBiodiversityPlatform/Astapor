@@ -274,6 +274,7 @@ class Specimen(models.Model):
     bold_sample_id = models.CharField(max_length=100, blank=True)
     bold_bin = models.CharField(max_length=100, blank=True)
     sequence_name = models.CharField(max_length=100, blank=True)
+    sequence_fasta = models.TextField(blank=True)
     bioregion = models.ForeignKey(Bioregion, null=True, blank=True, on_delete=models.CASCADE)
 
     def has_pictures(self):
