@@ -63,7 +63,7 @@ class SpecimenAdmin(admin.ModelAdmin):
     list_display = ('specimen_id', 'station', 'has_picture', 'initial_scientific_name', 'taxon',
                     'uncertain_identification', 'identified_by', 'specimen_location', 'vial', 'bioregion', 'fixation')
     list_filter = ('identified_by', 'specimen_location', 'fixation', 'station__expedition', 'bioregion',
-                   'uncertain_identification', 'ulb_box', HasTaxonListFilter, HasPicturesListFilter)
+                   'uncertain_identification', HasTaxonListFilter, HasPicturesListFilter)
     search_fields = ['initial_scientific_name', 'specimen_id']
     # TODO: document searchable fields in template? (https://stackoverflow.com/questions/11411622/add-help-text-for-search-field-in-admin-py)
 
@@ -81,7 +81,6 @@ class SpecimenAdmin(admin.ModelAdmin):
               'bold_sample_id',
               'bold_bin',
               'sequence_name',
-              'ulb_box',
               'comment')
 
     readonly_fields = ('initial_scientific_name', )

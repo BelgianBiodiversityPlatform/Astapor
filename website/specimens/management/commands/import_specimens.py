@@ -282,7 +282,6 @@ class Command(AstaporCommand):
 
                 specimen.initial_scientific_name = row['Scientific_name'].strip()
 
-                specimen.ulb_box = row['ULB BOX'].strip()
                 specimen.vial_size = row['Vial Size'].strip()
 
                 specimen.comment = row['Comment'].strip()
@@ -291,12 +290,4 @@ class Command(AstaporCommand):
                 self.w(self.style.SUCCESS('\n\t => Specimen created.'))
 
                 # creer champ isotope
-                # ajout champ FASTA
                 # blast interne (sequence entrée à la main, et recherche dans les specimens)
-                # virer ULBbox, plus de sens
-                # sequence name (plus tard, désactiver import)
-
-                # TODO: tester création gear
-                # TODO: selecteur de date marche pas dans l'édition d'une station ?
-                # TODO: Vérifier que le 5004 à bien le 5 oct 2017 comme date
-                # Admin station: filtrer par missing Gear?
