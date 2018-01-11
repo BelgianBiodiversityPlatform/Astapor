@@ -3,11 +3,13 @@ import datetime
 from django.contrib.gis.db import models
 from django.contrib.postgres.fields import FloatRangeField
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
-from django.utils.translation import ugettext_lazy as _
+from django.core.validators import MaxValueValidator, MinValueValidator
 
 from django.conf import settings
 
 from mptt.models import MPTTModel, TreeForeignKey
+
+from .validators import plausible_specimen_date, StrictlyMinValueValidator
 
 UNKNOWN_STATION_NAME = '<Unknown>'  # Sometimes we need a "fake" station to link Specimen to Expedition
 
@@ -16,12 +18,6 @@ SPECIES_RANK_NAME = "Species"
 SUBGENUS_RANK_NAME = "Subgenus"
 GENUS_RANK_NAME = "Genus"
 FAMILY_RANK_NAME = "Family"
-
-
-# TODO: move validator in different file
-def plausible_specimen_date(value):
-    if value > datetime.date.today():
-        raise ValidationError(_('Specimen capture dates should be in the past, not the future :)'))
 
 
 class TaxonRank(models.Model):
@@ -276,6 +272,27 @@ class Specimen(models.Model):
     sequence_fasta = models.TextField(blank=True)
     bioregion = models.ForeignKey(Bioregion, null=True, blank=True, on_delete=models.CASCADE)
 
+    isotope_d13C = models.FloatField(' d13C', null=True, blank=True,   # Whitespace to avoid capitalization in forms
+                                     validators=[MinValueValidator(-40), MaxValueValidator(-10)])
+    isotope_d15N = models.FloatField(' d15N', null=True, blank=True,
+                                     validators=[MinValueValidator(-5), MaxValueValidator(30)])
+    isotope_d34S = models.FloatField(' d34S', null=True, blank=True)
+
+    isotope_percentN = models.FloatField(' %N', null=True, blank=True,
+                                         validators=[StrictlyMinValueValidator(0), MaxValueValidator(10)])  # 0 excluded
+    isotope_percentC = models.FloatField(' %C', null=True, blank=True,
+                                         validators=[StrictlyMinValueValidator(0), MaxValueValidator(30)])  # 0 excluded
+    isotope_percentS = models.FloatField(' %S', null=True, blank=True,
+                                         validators=[StrictlyMinValueValidator(0)])
+
+    def isotope_C_N_proportion(self):
+        if self.isotope_percentC and self.isotope_percentN:
+            return self.isotope_percentC / self.isotope_percentN
+        else:
+            return '/'
+
+    isotope_C_N_proportion.short_description = 'C/N proportions'
+
     def has_pictures(self):
         return self.specimenpicture_set.count() > 0
 
@@ -297,6 +314,9 @@ class Specimen(models.Model):
             if Specimen.objects.filter(mnhn_number=self.mnhn_number).count() > 0:
                 raise ValidationError("Mnhn number must be unique (if not null)")
 
+        if self.isotope_percentN and self.isotope_percentC:
+            if self.isotope_percentC < self.isotope_percentN:
+                raise ValidationError("Isotope: %C must be < %N")
 
     def save(self, *args, **kwargs):
         self.full_clean()  # We want our custom clean method to be called at save()
@@ -313,5 +333,3 @@ class SpecimenPicture(models.Model):
     image = models.ImageField(upload_to='specimen_pictures')
     high_interest = models.BooleanField("High resolution/species representative")
     specimen = models.ForeignKey(Specimen, on_delete=models.CASCADE)
-
-

@@ -67,23 +67,33 @@ class SpecimenAdmin(admin.ModelAdmin):
     search_fields = ['initial_scientific_name', 'specimen_id']
     # TODO: document searchable fields in template? (https://stackoverflow.com/questions/11411622/add-help-text-for-search-field-in-admin-py)
 
-    fields = ('specimen_id',
-              ('taxon', 'uncertain_identification', 'initial_scientific_name'),
-              'station',
-              'identified_by',
-              'specimen_location',
-              'bioregion',
-              'fixation',
-                ('vial', 'vial_size'),
-              'mnhn_number',
-              'mna_code',
-              'bold_process_id',
-              'bold_sample_id',
-              'bold_bin',
-              'sequence_name',
-              'comment')
+    fieldsets = (
+        (None, {
+            'fields': ('specimen_id',
+                      ('taxon', 'uncertain_identification', 'initial_scientific_name'),
+                      'station',
+                      'identified_by',
+                      'specimen_location',
+                      'bioregion',
+                      'fixation',
+                      ('vial', 'vial_size'),
+                      'mnhn_number',
+                      'mna_code',
+                      'bold_process_id',
+                      'bold_sample_id',
+                      'bold_bin',
+                      'sequence_name',
+                      'comment')
+                }),
+        ('Isotopes', {
+            'classes': ('collapse',),
+            'fields': (('isotope_d13C', 'isotope_d15N', 'isotope_d34S'),
+                       ('isotope_percentN', 'isotope_percentC', 'isotope_percentS'),
+                       'isotope_C_N_proportion')
+        }),
+    )
 
-    readonly_fields = ('initial_scientific_name', )
+    readonly_fields = ('initial_scientific_name', 'isotope_C_N_proportion')
 
     inlines = [
         SpecimenPictureInline,

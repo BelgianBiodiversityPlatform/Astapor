@@ -289,5 +289,5 @@ class Command(AstaporCommand):
                 specimen.save()
                 self.w(self.style.SUCCESS('\n\t => Specimen created.'))
 
-                # creer champ isotope
+                # creer champ souple "measurements"
                 # blast interne (sequence entrée à la main, et recherche dans les specimens)
