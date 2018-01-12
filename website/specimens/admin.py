@@ -83,6 +83,8 @@ class SpecimenAdmin(admin.ModelAdmin):
                       'bold_sample_id',
                       'bold_bin',
                       'sequence_name',
+                      'sequence_fasta',
+                       'additional_data',
                       'comment')
                 }),
         ('Isotopes', {

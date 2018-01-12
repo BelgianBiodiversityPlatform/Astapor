@@ -1,7 +1,5 @@
-import datetime
-
 from django.contrib.gis.db import models
-from django.contrib.postgres.fields import FloatRangeField
+from django.contrib.postgres.fields import FloatRangeField, HStoreField
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 
@@ -268,7 +266,7 @@ class Specimen(models.Model):
     bold_process_id = models.CharField(max_length=100, blank=True)
     bold_sample_id = models.CharField(max_length=100, blank=True)
     bold_bin = models.CharField(max_length=100, blank=True)
-    sequence_name = models.CharField(max_length=100, blank=True, unique=True)
+    sequence_name = models.CharField(max_length=100, blank=True)
     sequence_fasta = models.TextField(blank=True)
     bioregion = models.ForeignKey(Bioregion, null=True, blank=True, on_delete=models.CASCADE)
 
@@ -285,6 +283,8 @@ class Specimen(models.Model):
     isotope_percentS = models.FloatField(' %S', null=True, blank=True,
                                          validators=[StrictlyMinValueValidator(0)])
 
+    additional_data = HStoreField(blank=True, null=True)
+
     def isotope_C_N_proportion(self):
         if self.isotope_percentC and self.isotope_percentN:
             return self.isotope_percentC / self.isotope_percentN
@@ -295,6 +295,24 @@ class Specimen(models.Model):
 
     def has_pictures(self):
         return self.specimenpicture_set.count() > 0
+
+    def _check_field_unique_if_not_null(self, field_name, error_message):
+        field_value = getattr(self, field_name)
+        if field_value:
+            is_new_record = self.pk is None
+
+            matching_objects = Specimen.objects.filter(**{field_name: field_value})
+            matching_objects_count = matching_objects.count()
+
+            ok = False
+            if matching_objects_count == 0:
+                ok = True  # No match, no problem
+            elif matching_objects_count == 1:
+                if not is_new_record and matching_objects.get().pk == self.pk:
+                    ok = True  # There's already one, but it seems it's me
+
+            if not ok:
+                raise ValidationError(error_message)
 
     def clean(self):
         is_new = self.pk is None
@@ -310,9 +328,10 @@ class Specimen(models.Model):
                 if the_obj.pk != self.pk:
                     raise ValidationError("Vial should be unique for a given expedition")
 
-        if self.mnhn_number and not settings.DISABLE_MNHN_UNIQUENESS_VALIDATION:  # Unique, but only if not null
-            if Specimen.objects.filter(mnhn_number=self.mnhn_number).count() > 0:
-                raise ValidationError("Mnhn number must be unique (if not null)")
+        if not settings.DISABLE_MNHN_UNIQUENESS_VALIDATION:  # Unique, but only if not null
+            self._check_field_unique_if_not_null('mnhn_number', "MNHN number must be unique (if not null)")
+
+        self._check_field_unique_if_not_null('sequence_name', "Sequence name number must be unique (if not null)")
 
         if self.isotope_percentN and self.isotope_percentC:
             if self.isotope_percentC < self.isotope_percentN:
